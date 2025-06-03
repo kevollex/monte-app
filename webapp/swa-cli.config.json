@@ -1,7 +1,7 @@
 {
   "$schema": "https://aka.ms/azure/static-web-apps-cli/schema",
   "configurations": {
-    "monte-app": {
+    "MonteApp": {
       "appLocation": ".",
       "outputLocation": "dist",
       "appBuildCommand": "npm run build --if-present",

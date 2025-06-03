@@ -5,7 +5,7 @@ import { resolveRouterPath } from '../router';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 @customElement('app-header')
 export class AppHeader extends LitElement {
-  @property({ type: String }) title = 'monte-app';
+  @property({ type: String }) title = 'MonteApp';
 
   @property({ type: Boolean}) enableBack: boolean = false;
 

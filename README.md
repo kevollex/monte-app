@@ -1,4 +1,4 @@
-# monte-app
+# MonteApp
 Progressive Web App and its companion API
 
 ## Structure
