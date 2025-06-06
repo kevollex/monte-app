@@ -1,0 +1,11 @@
+meta {
+  name: GetSQLServerInfo
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://localhost:7448/sqlserverinfo
+  body: none
+  auth: inherit
+}
