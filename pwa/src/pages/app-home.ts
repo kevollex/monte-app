@@ -4,6 +4,7 @@ import { resolveRouterPath } from '../router';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/input/input.js';
 
 import { styles } from '../styles/shared-styles';
 
@@ -77,6 +78,28 @@ export class AppHome extends LitElement {
     }
   }
 
+  @property() licenciasResult = '';
+  @property() email = '';
+  @property() password = '';
+
+  async getLicenciasPoC() {
+    if (!this.email || !this.password) {
+      this.licenciasResult = 'Please enter email and password.';
+      return;
+    }
+    this.licenciasResult = 'Loading...';
+    try {
+      const res = await fetch(`/api/licenciaspoc?email=${encodeURIComponent(this.email)}&password=${encodeURIComponent(this.password)}`);
+      if (!res.ok) {
+        this.licenciasResult = `Error: ${res.statusText}`;
+        return;
+      }
+      this.licenciasResult = await res.text();
+    } catch (e) {
+      this.licenciasResult = 'Request failed.';
+    }
+  }
+
   render() {
     return html`
       <app-header></app-header>
@@ -133,6 +156,26 @@ export class AppHome extends LitElement {
               </li>
             </ul>
           </sl-card>
+          
+          <sl-card id="licenciasCard">
+          <h2>Test LicenciasPoC Endpoint</h2>
+          <sl-input
+            label="Email"
+            type="email"
+            .value=${this.email}
+            @sl-input=${(e: any) => { this.email = e.target.value; }}
+            style="margin-bottom: 8px;"
+          ></sl-input>
+          <sl-input
+            label="Password"
+            type="password"
+            .value=${this.password}
+            @sl-input=${(e: any) => { this.password = e.target.value; }}
+            style="margin-bottom: 8px;"
+          ></sl-input>
+          <sl-button variant="primary" @click=${this.getLicenciasPoC}>Get Licencias</sl-button>
+          <pre style="white-space: pre-wrap; margin-top: 8px;">${this.licenciasResult}</pre>
+        </sl-card>
 
           <sl-button href="${resolveRouterPath('about')}" variant="primary">Navigate to About</sl-button>
         </div>
