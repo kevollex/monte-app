@@ -59,6 +59,12 @@ export class AppHome extends LitElement {
     // this method is a lifecycle even in lit
     // for more info check out the lit docs https://lit.dev/docs/components/lifecycle/
     console.log('This is your home page');
+    // TODO Delete this when we are done testing. Just here to test the API call.
+    const sqlserverinfo = await fetch("api/sqlserverinfo");
+    console.log(sqlserverinfo);
+    const sqlserverinfoJson = await sqlserverinfo.json();
+    console.log(sqlserverinfoJson);
+    console.log('✅');
   }
 
   share() {

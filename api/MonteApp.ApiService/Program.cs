@@ -23,9 +23,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 
-    app.MapGet("/sqlserverinfo", ( [FromServices] IDatabase database ) =>
+    app.MapGet("/sqlserverinfo", async ([FromServices] IDatabase database) =>
     {
-        return database.GetSQLServerInfoAsync();
+        var info = await database.GetSQLServerInfoAsync();
+        return Results.Json(new { info });
     })
     .WithName("GetSQLServerInfo");
 }
