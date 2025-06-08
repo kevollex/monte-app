@@ -20,4 +20,14 @@ builder.AddProject<Projects.MonteApp_Web>("webfrontend")
     .WithReference(apiService)
     .WaitFor(apiService);
 
+builder.AddNpmApp("pwavite", "../../pwa")
+    .WithExternalHttpEndpoints()
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "VITE_PORT")
+    .WithHttpHealthCheck("/health")
+    .WithReference(cache)
+    .WaitFor(cache)
+    .WithReference(apiService)
+    .WaitFor(apiService);
+
 builder.Build().Run();
