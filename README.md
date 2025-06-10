@@ -20,7 +20,7 @@ Progressive Web App and its companion API
 
 ```bash
 cd api
-dotnet run --project --project MonteApp.AppHost
+dotnet run --project MonteApp.AppHost
 ```
 
 ### pwa
