@@ -28,6 +28,9 @@ builder.AddNpmApp("pwavite", "../../pwa")
     .WithReference(cache)
     .WaitFor(cache)
     .WithReference(apiService)
-    .WaitFor(apiService);
+    .WaitFor(apiService)
+    .PublishAsDockerFile();
+
+builder.AddDockerComposeEnvironment("compose");
 
 builder.Build().Run();

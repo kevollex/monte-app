@@ -57,7 +57,7 @@ export class AppHome extends LitElement {
   `];
 
   async firstUpdated() {
-    // this method is a lifecycle even in lit
+    // this method is a lifecycle event in lit
     // for more info check out the lit docs https://lit.dev/docs/components/lifecycle/
     console.log('This is your home page');
     // TODO Delete this when we are done testing. Just here to test the API call.
