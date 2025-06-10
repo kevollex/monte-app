@@ -35,7 +35,7 @@ if (app.Environment.IsDevelopment())
     {
         var licencias = await LoginAndGetLicenciasPoCAsync("https://montessori.bo/principal/public", email, password);
 
-        return Results.Text(licencias);
+        return Results.Content(licencias, "text/html");
     })
     .WithName("GetLicenciasPoC");
 }

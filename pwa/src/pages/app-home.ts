@@ -1,5 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { resolveRouterPath } from '../router';
 
 import { consume } from '@lit/context';
@@ -194,7 +195,9 @@ export class AppHome extends LitElement {
             style="margin-bottom: 8px;"
           ></sl-input>
           <sl-button variant="primary" @click=${this.getLicenciasPoC}>Get Licencias</sl-button>
-          <pre style="white-space: pre-wrap; margin-top: 8px;">${this.licenciasResult}</pre>
+          <div style="white-space: pre-wrap; margin-top: 8px; border: 1px solid #ccc; padding: 8px; border-radius: 4px;">
+            ${unsafeHTML(this.licenciasResult)}
+          </div>
         </sl-card>
 
           <sl-button href="${resolveRouterPath('about')}" variant="primary">Navigate to About</sl-button>
