@@ -2,12 +2,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache");
 
+var databaseName = "monteappdb"; // TODO: Grab value from config or use default
 var sqlPassword = builder.AddParameter("sqlpassword", true);
-var sql = builder.AddSqlServer("sql", sqlPassword)
+int sqlPort = 1434; // Grab value from config or use default
+var sql = builder.AddSqlServer("sql", sqlPassword, port: sqlPort)
                  .WithLifetime(ContainerLifetime.Persistent)
-                 .WithDataVolume("monteappdb-datavolume");
+                 .WithDataVolume($"{databaseName}-datavolume");
 
-var databaseName = "monteappdb"; // TODO: Grab name from config
 var creationScript = $$"""
     -- Create database if it doesn't exist
     IF DB_ID('{{databaseName}}') IS NULL
