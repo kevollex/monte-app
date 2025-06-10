@@ -15,8 +15,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@lit/context": "^1.1.5",
     "@shoelace-style/shoelace": "^2.18.0",
     "@thepassle/app-tools": "^0.9.12",
+    "axios": "^1.9.0",
     "lit": "^3.2.1",
     "urlpattern-polyfill": "^10.0.0",
     "workbox-build": "^7.3.0",

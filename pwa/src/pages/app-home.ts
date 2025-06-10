@@ -2,6 +2,9 @@ import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
 import { resolveRouterPath } from '../router';
 
+import { consume } from '@lit/context';
+import { type AbsencesService, absencesServiceContext } from '../services/absences-service/absences-service-context'; 
+
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
@@ -10,6 +13,8 @@ import { styles } from '../styles/shared-styles';
 
 @customElement('app-home')
 export class AppHome extends LitElement {
+  @consume({ context: absencesServiceContext }) 
+  private absencesService?: AbsencesService;
 
   // For more information on using properties and state in lit
   // check out this link https://lit.dev/docs/components/properties/
@@ -56,15 +61,25 @@ export class AppHome extends LitElement {
     }
   `];
 
+  @property() sqlServerInfoResult = 'Loading...';
+
   async firstUpdated() {
     // this method is a lifecycle event in lit
     // for more info check out the lit docs https://lit.dev/docs/components/lifecycle/
     console.log('This is your home page');
     // TODO Delete this when we are done testing. Just here to test the API call.
-    const sqlserverinfo = await fetch("api/sqlserverinfo");
-    console.log(sqlserverinfo);
-    const sqlserverinfoJson = await sqlserverinfo.json();
-    console.log(sqlserverinfoJson);
+    try {
+      const result = await this.absencesService?.getSqlServerInfo();
+      this.sqlServerInfoResult = JSON.stringify(result, null, 2);
+      
+    } catch (error: any) {
+      if (error.response) {
+        this.sqlServerInfoResult = `Error: ${error.response.statusText}`;
+      } else {
+        this.sqlServerInfoResult = 'Request failed.';
+      }
+    }
+    console.log(this.sqlServerInfoResult);
     console.log('✅');
   }
 
@@ -89,14 +104,14 @@ export class AppHome extends LitElement {
     }
     this.licenciasResult = 'Loading...';
     try {
-      const res = await fetch(`/api/licenciaspoc?email=${encodeURIComponent(this.email)}&password=${encodeURIComponent(this.password)}`);
-      if (!res.ok) {
-        this.licenciasResult = `Error: ${res.statusText}`;
-        return;
+      const res = await this.absencesService?.getLicenciasPoC(this.email, this.password);
+      this.licenciasResult = res ?? '';
+    } catch (e: any) {
+      if (e.response) {
+        this.licenciasResult = `Error: ${e.response.statusText}`;
+      } else {
+        this.licenciasResult = 'Request failed.';
       }
-      this.licenciasResult = await res.text();
-    } catch (e) {
-      this.licenciasResult = 'Request failed.';
     }
   }
 
@@ -155,6 +170,11 @@ export class AppHome extends LitElement {
                   >App Tools Router</a>
               </li>
             </ul>
+          </sl-card>
+
+          <sl-card id="sqlServerCard">
+            <h2>Test SQL Server Endpoint</h2>
+            <p>${this.sqlServerInfoResult}</p>
           </sl-card>
           
           <sl-card id="licenciasCard">

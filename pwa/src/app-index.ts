@@ -6,8 +6,16 @@ import './components/header';
 import './styles/global.css';
 import { router } from './router';
 
+import { provide } from '@lit/context';
+import { absencesServiceContext } from './services/absences-service/absences-service-context';
+import { AbsencesService } from './services/absences-service/absences-service';
+
 @customElement('app-index')
 export class AppIndex extends LitElement {
+
+  @provide({ context: absencesServiceContext })
+  absencesService = new AbsencesService();
+
   static styles = css`
     main {
       padding-left: 16px;
