@@ -3,7 +3,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 var cache = builder.AddRedis("cache");
 
 var sql = builder.AddSqlServer("sql")
-                 .WithLifetime(ContainerLifetime.Persistent);
+                 .WithLifetime(ContainerLifetime.Persistent)
+                 .WithDataVolume("monteappdb-datavolume");
 
 var db = sql.AddDatabase("monteappdb");
 
