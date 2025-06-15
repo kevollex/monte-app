@@ -1,4 +1,6 @@
 using System.Net;
+using MonteApp.ApiService.Infrastructure;
+using MonteApp.ApiService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,9 +12,11 @@ builder.Services.AddProblemDetails();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 builder.AddSqlServerClient(connectionName: "monteappdb");
 builder.Services.AddScoped<IDatabase, Database>();
+builder.Services.AddScoped<ISubSystemsService, SubSystemsService>();
 
 var app = builder.Build();
 
@@ -22,22 +26,6 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-
-    app.MapGet("/sqlserverinfo", async (IDatabase database) =>
-    {
-        var info = await database.GetSQLServerInfoAsync();
-
-        return Results.Json(new { info });
-    })
-    .WithName("GetSQLServerInfo");
-
-    app.MapGet("/licenciaspoc", async (string email, string password) =>
-    {
-        var licencias = await LoginAndGetLicenciasPoCAsync("https://montessori.bo/principal/public", email, password);
-
-        return Results.Content(licencias, "text/html");
-    })
-    .WithName("GetLicenciasPoC");
 }
 
 string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
@@ -57,10 +45,12 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+app.MapControllers();
 app.MapDefaultEndpoints();
 
 app.Run();
 
+// TODO: Move this method to a service class
 async Task<string> LoginAndGetLicenciasPoCAsync(string baseUrl, string email, string password, int sistema = 2)
 {
     var handler = new HttpClientHandler

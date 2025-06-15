@@ -1,6 +1,8 @@
 using Microsoft.Data.SqlClient;
 
-interface IDatabase
+namespace MonteApp.ApiService.Infrastructure;
+
+public interface IDatabase
 {
     Task<string> GetSQLServerInfoAsync();
 }
