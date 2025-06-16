@@ -1,4 +1,7 @@
 using System.Net;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using MonteApp.ApiService.Infrastructure;
 using MonteApp.ApiService.Services;
 
@@ -10,13 +13,42 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
+var keyVal = $"""
+            MIHcAgEBBEIBL2wt/h7Whzcuyp1HiCNY1xKCOj1zgTUY3WNrCvaew+RnmAUJVTSw
+            RO7uZvlAfRMwsiGZqJgVJ0OmR0xTQhzlI7egBwYFK4EEACOhgYkDgYYABACjXMjc
+            1464NsMJlTFHyyzh5RLfzZy0xf9ScvM8Ibv0fAw61f2edRgOerxiX5ByrvZb/5tZ
+            PBlsQlHHBaCrhIy/+QBLmy4U4o2P6VmXThPUUWDVigZkaQtfqg3oJhsg+bR/01oQ
+            Lo5RXgs4JkPbA1eJA0rwvV5WCvRwcAbbsY5pyBM7Ng==
+            """;
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyVal))
+            // IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
+// Clients
 builder.AddSqlServerClient(connectionName: "monteappdb");
-builder.Services.AddScoped<IDatabase, Database>();
+// Services
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<ISubSystemsService, SubSystemsService>();
+// Infrastructure
+builder.Services.AddScoped<IDatabase, Database>();
+builder.Services.AddScoped<IMontessoriBoWebsite, MontessoriBoWebsite>();
 
 var app = builder.Build();
 
