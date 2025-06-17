@@ -55,15 +55,13 @@ public class AuthorizationService : IAuthorizationService
             new Claim(ClaimTypes.Name, email),
             // Add more claims as needed
         };
-        var keyVal = $"""
-            MIHcAgEBBEIBL2wt/h7Whzcuyp1HiCNY1xKCOj1zgTUY3WNrCvaew+RnmAUJVTSw
-            RO7uZvlAfRMwsiGZqJgVJ0OmR0xTQhzlI7egBwYFK4EEACOhgYkDgYYABACjXMjc
-            1464NsMJlTFHyyzh5RLfzZy0xf9ScvM8Ibv0fAw61f2edRgOerxiX5ByrvZb/5tZ
-            PBlsQlHHBaCrhIy/+QBLmy4U4o2P6VmXThPUUWDVigZkaQtfqg3oJhsg+bR/01oQ
-            Lo5RXgs4JkPbA1eJA0rwvV5WCvRwcAbbsY5pyBM7Ng==
-            """;
-        // var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"])); // TODO: Configurable
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyVal));
+      
+        var jwtKey = _config["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            throw new InvalidOperationException("JWT key is not configured.");
+        }
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
