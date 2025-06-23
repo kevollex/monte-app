@@ -9,6 +9,7 @@ namespace MonteApp.ApiService.Controllers
     public class AuthorizationController : ControllerBase
     {
         private readonly IAuthorizationService _authorizationService;
+
         public AuthorizationController(IAuthorizationService authorizationService)
         {
             _authorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));

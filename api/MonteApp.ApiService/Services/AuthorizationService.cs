@@ -32,17 +32,36 @@ public class AuthorizationService : IAuthorizationService
         // LATER TODO: First to MonteApp, then to MontessoriBo. If MontessoriBo is down, allow login to MonteApp but with limited features
         string result;
 
-        result = await _montessoriBoWebsite.LoginAsync(email, password);
-        if (string.IsNullOrEmpty(result))
+        HttpResponseMessage response = await _montessoriBoWebsite.LoginAsync(email, password);
+        // Compare cookies from login OK with login not Ok
+        // 5. Check if login was successful
+        if (response.IsSuccessStatusCode)
+        {
+            // 6. Read the response content
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            // 7. Check if the login was successful by looking for a specific string in the response
+            // This is a simplified check; you might want to use a more robust method
+            // such as checking for a specific element or URL that indicates a successful login.
+            // For example, checking if the response contains a specific title or element (div id="app")
+            if (!responseContent.Contains("Montessori - Portal para padres de familia"))
+            {
+                // Login Succesful, now parse HTML response to get
+                // Login successful
+                throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
+            }
+            // Login successful, now we can proceed to MonteApp
+            string token = GenerateJWTToken(email);
+            result = token;
+        }
+        else
         {
             throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
         }
 
         // string token = GenerateJWTToken(email, result); // TODO: Maybe?
-        string token = GenerateJWTToken(email);
         // TODO: Store the token in a secure place, e.g., database or cache
         // For now, just return the token
-        result = token;
 
         return result;
     }
