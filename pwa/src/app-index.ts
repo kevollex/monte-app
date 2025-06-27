@@ -67,7 +67,7 @@ export class AppIndex extends LitElement {
         return;
       }
       const token = await getToken(messaging, {
-        vapidKey: 'BOWPLxzD1xp0DfnpEY8Rf4Z0-KblW73hpRtyZhY6MxUuwMdLVNb3H_-mRiyxROFDza3SUNdIeFGGGxcD_8dOQEQ'
+        vapidKey: ''
       });
       console.log('FCM Token:', token);
 
