@@ -62,10 +62,12 @@ var creationScript = $$"""
 var db = sql.AddDatabase(databaseName)
             .WithCreationScript(creationScript);
 
-var apiService = builder.AddProject<Projects.MonteApp_ApiService>("apiservice")
-    .WithHttpHealthCheck("/health")
-    .WithReference(db)
-    .WaitFor(db);
+var apiService = builder
+  .AddProject<Projects.MonteApp_ApiService>("apiservice")
+  .WithExternalHttpEndpoints()      // ← Esto es lo que faltaba
+  .WithHttpHealthCheck("/health")
+  .WithReference(db)
+  .WaitFor(db);
 
 builder.AddProject<Projects.MonteApp_Web>("webfrontend")
     .WithExternalHttpEndpoints()

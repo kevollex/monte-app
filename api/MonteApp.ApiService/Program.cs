@@ -48,6 +48,7 @@ builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<ISubSystemsService, SubSystemsService>();
 // Infrastructure
 builder.Services.AddScoped<IDatabase, Database>();
+builder.Services.AddScoped<INotificationsService, NotificationsService>();
 builder.Services.AddScoped<IMontessoriBoWebsite, MontessoriBoWebsite>();
 
 var app = builder.Build();
