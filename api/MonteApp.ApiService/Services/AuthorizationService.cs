@@ -2,6 +2,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using HtmlAgilityPack;
 using Microsoft.IdentityModel.Tokens;
 using MonteApp.ApiService.Infrastructure;
 
@@ -39,17 +40,11 @@ public class AuthorizationService : IAuthorizationService
         {
             // 6. Read the response content
             var responseContent = await response.Content.ReadAsStringAsync();
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(responseContent);
 
-            // 7. Check if the login was successful by looking for a specific string in the response
-            // This is a simplified check; you might want to use a more robust method
-            // such as checking for a specific element or URL that indicates a successful login.
-            // For example, checking if the response contains a specific title or element (div id="app")
-            if (!responseContent.Contains("Montessori - Portal para padres de familia"))
-            {
-                // Login Succesful, now parse HTML response to get
-                // Login successful
-                throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
-            }
+            var appDiv = htmlDoc.DocumentNode.SelectSingleNode("//div[@id='app']") ?? throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
+
             // Login successful, now we can proceed to MonteApp
             string token = GenerateJWTToken(email);
             result = token;
@@ -58,10 +53,6 @@ public class AuthorizationService : IAuthorizationService
         {
             throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
         }
-
-        // string token = GenerateJWTToken(email, result); // TODO: Maybe?
-        // TODO: Store the token in a secure place, e.g., database or cache
-        // For now, just return the token
 
         return result;
     }

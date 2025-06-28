@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using HtmlAgilityPack;
 
 namespace MonteApp.ApiService.Infrastructure;
 
@@ -28,12 +29,13 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
 
     public async Task<HttpResponseMessage> LoginAsync(string email, string password)
     {
-        // 1. Get the login page to retrieve the CSRF token
+        // 1. Get the login page to retrieve the CSRF token from content
         var loginPage = await _client.GetStringAsync(LoginPadresUrl);
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(loginPage);
 
-        // 2. Extract CSRF token from the HTML (simplified, use regex or HTML parser)
-        var tokenMatch = System.Text.RegularExpressions.Regex.Match(loginPage, "name=\"_token\" value=\"([^\"]+)\"");
-        var csrfToken = tokenMatch.Groups[1].Value;
+        // // 2. Extract CSRF token html node
+        var tokenNode = htmlDoc.DocumentNode.SelectSingleNode("//meta[@name='csrf-token']") ?? throw new InvalidOperationException("CSRF token not found in the login page.");
 
         // 3. Prepare form data
         var formData = new FormUrlEncodedContent(new[]
@@ -41,7 +43,7 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
                 new KeyValuePair<string, string>("email", email),
                 new KeyValuePair<string, string>("password", password),
                 new KeyValuePair<string, string>("sistema", SistemaPadresId),
-                new KeyValuePair<string, string>("_token", csrfToken)
+                new KeyValuePair<string, string>("_token", tokenNode.GetAttributeValue("content", ""))
             });
 
         // 4. Send POST request to login
