@@ -8,8 +8,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonteApp.ServiceDefaults", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonteApp.ApiService", "MonteApp.ApiService\MonteApp.ApiService.csproj", "{4114C26F-2BC8-4AE5-9C54-F34F435689DE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonteApp.Web", "MonteApp.Web\MonteApp.Web.csproj", "{F4EB5B1D-8B9E-403B-8E4C-E30076BF0DFB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,10 +26,6 @@ Global
 		{4114C26F-2BC8-4AE5-9C54-F34F435689DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4114C26F-2BC8-4AE5-9C54-F34F435689DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4114C26F-2BC8-4AE5-9C54-F34F435689DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F4EB5B1D-8B9E-403B-8E4C-E30076BF0DFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F4EB5B1D-8B9E-403B-8E4C-E30076BF0DFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F4EB5B1D-8B9E-403B-8E4C-E30076BF0DFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F4EB5B1D-8B9E-403B-8E4C-E30076BF0DFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

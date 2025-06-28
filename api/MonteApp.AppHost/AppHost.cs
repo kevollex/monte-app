@@ -67,14 +67,6 @@ var apiService = builder.AddProject<Projects.MonteApp_ApiService>("apiservice")
     .WithReference(db)
     .WaitFor(db);
 
-builder.AddProject<Projects.MonteApp_Web>("webfrontend")
-    .WithExternalHttpEndpoints()
-    .WithHttpHealthCheck("/health")
-    .WithReference(cache)
-    .WaitFor(cache)
-    .WithReference(apiService)
-    .WaitFor(apiService);
-
 builder.AddNpmApp("pwavite", "../../pwa")
     .WithExternalHttpEndpoints()
     .WithEnvironment("BROWSER", "none")
