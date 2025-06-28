@@ -7,12 +7,16 @@ import './styles/global.css';
 import { router } from './router';
 
 import { provide } from '@lit/context';
+import { authServiceContext } from './services/auth-service/auth-service-context';
+import { AuthService } from './services/auth-service/auth-service';
 import { absencesServiceContext } from './services/absences-service/absences-service-context';
 import { AbsencesService } from './services/absences-service/absences-service';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
 
+  @provide({ context: authServiceContext })
+  authService = new AuthService();
   @provide({ context: absencesServiceContext })
   absencesService = new AbsencesService();
 

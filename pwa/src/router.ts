@@ -13,6 +13,7 @@ import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
 import { title } from '@thepassle/app-tools/router/plugins/title.js';
 
 import './pages/app-home.js';
+import './pages/app-login.js';
 
 const baseURL: string = (import.meta as any).env.BASE_URL;
 
@@ -20,6 +21,11 @@ export const router = new Router({
     routes: [
       {
         path: resolveRouterPath(),
+        title: 'Login',
+        render: () => html`<app-login></app-login>`
+      },
+      {
+        path: resolveRouterPath('home'),
         title: 'Home',
         render: () => html`<app-home></app-home>`
       },
