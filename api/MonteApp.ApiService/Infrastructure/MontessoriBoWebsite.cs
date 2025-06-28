@@ -12,6 +12,7 @@ public interface IMontessoriBoWebsite
 // TODO: Inject HTTP client
 public class MontessoriBoWebsite : IMontessoriBoWebsite
 {
+    private readonly HttpClient _client;
     public const string BaseUrl = "https://montessori.bo/principal/public";
     public const string LoginUrl = $"{BaseUrl}/login";
     public const string SistemaPadresId = "2";
@@ -20,21 +21,15 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
     public const string SubsysLicencias_LicenciasAlumnosUrl = $"{SubsysLicenciasUrl}/licencias_alumnos.php?id=";
 
     // TODO: Inject HTTP client via constructor
-    public MontessoriBoWebsite()
+    public MontessoriBoWebsite(HttpClient client)
     {
+        _client = client ?? throw new ArgumentNullException(nameof(client));
     }
 
     public async Task<HttpResponseMessage> LoginAsync(string email, string password)
     {
-        var handler = new HttpClientHandler
-        {
-            CookieContainer = new CookieContainer(),
-            UseCookies = true
-        };
-
-        using var client = new HttpClient(handler);
         // 1. Get the login page to retrieve the CSRF token
-        var loginPage = await client.GetStringAsync(LoginPadresUrl);
+        var loginPage = await _client.GetStringAsync(LoginPadresUrl);
 
         // 2. Extract CSRF token from the HTML (simplified, use regex or HTML parser)
         var tokenMatch = System.Text.RegularExpressions.Regex.Match(loginPage, "name=\"_token\" value=\"([^\"]+)\"");
@@ -50,7 +45,7 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
             });
 
         // 4. Send POST request to login
-        return await client.PostAsync(LoginUrl, formData);
+        return await _client.PostAsync(LoginUrl, formData);
     }
 
     public Task<string> GetLicenciasPoCAsync()

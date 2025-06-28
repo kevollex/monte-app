@@ -40,6 +40,16 @@ builder.Services.AddControllers();
 // Dependencies injection
 // Clients
 builder.AddSqlServerClient(connectionName: "monteappdb");
+builder.Services.AddScoped<CookieContainer>();
+builder.Services.AddScoped(sp =>
+{
+    var cookieContainer = sp.GetRequiredService<CookieContainer>();
+    return new HttpClient(new HttpClientHandler
+    {
+        CookieContainer = cookieContainer,
+        UseCookies = true
+    }, disposeHandler: true);
+});
 // Services
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<ISubSystemsService, SubSystemsService>();
