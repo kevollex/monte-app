@@ -29,30 +29,14 @@ var creationScript = $$"""
     );
     GO
 
-    -- Roles table
-    CREATE TABLE [roles] (
-        id INT PRIMARY KEY IDENTITY(1,1),
-        name VARCHAR(100) NOT NULL UNIQUE
-    );
-    GO
-
-    -- UserRoles table (many-to-many)
-    CREATE TABLE [user_roles] (
-        user_id INT NOT NULL,
-        role_id INT NOT NULL,
-        PRIMARY KEY (user_id, role_id),
-        FOREIGN KEY (user_id) REFERENCES [users](id) ON DELETE CASCADE,
-        FOREIGN KEY (role_id) REFERENCES [roles](id) ON DELETE CASCADE
-    );
-    GO
-
-    -- RefreshTokens table (for JWT refresh token management)
-    CREATE TABLE [refresh_tokens] (
+    -- Sessions table (for session information management)
+    CREATE TABLE [sessions] (
         id INT PRIMARY KEY IDENTITY(1,1),
         user_id INT NOT NULL,
-        token VARCHAR(512) NOT NULL,
-        expires_at DATETIME NOT NULL,
+        csrf_token VARCHAR(512) NOT NULL,
+        jwt_id VARCHAR(128) NOT NULL,
         created_at DATETIME DEFAULT GETDATE(),
+        expires_at DATETIME NULL,
         revoked_at DATETIME NULL,
         FOREIGN KEY (user_id) REFERENCES [users](id) ON DELETE CASCADE
     );

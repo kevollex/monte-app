@@ -51,7 +51,7 @@ builder.Services.AddScoped(sp =>
     }, disposeHandler: true);
 });
 // Services
-builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubSystemsService, SubSystemsService>();
 // Infrastructure
 builder.Services.AddScoped<IDatabase, Database>();

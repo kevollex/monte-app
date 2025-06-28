@@ -14,4 +14,16 @@ export class AuthService {
             throw error; // Re-throw the error for further handling if needed
         }
     }
+
+    async logout(): Promise<string> {
+        try {
+            const response = await httpClient.post<string>(
+                `/api/logout`
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error logout:', error);
+            throw error; // Re-throw the error for further handling if needed
+        }
+    }
 }

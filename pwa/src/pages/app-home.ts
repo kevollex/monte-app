@@ -1,12 +1,18 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { consume } from '@lit/context';
 import { router, resolveRouterPath } from '../router';
 import '../components/card-app';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
+import { authServiceContext } from '../services/auth-service/auth-service-context';
+import { AuthService } from '../services/auth-service/auth-service';
+
 @customElement('app-home')
 export class AppHome extends LitElement {
+  @consume({ context: authServiceContext })
+  private authService?: AuthService;
 
   static styles = css`
     :host {
@@ -94,7 +100,8 @@ sl-button::part(base):hover {
     }
   `;
 
-  logout() {
+  async logout() {
+    await this.authService?.logout();
     localStorage.removeItem('jwt');
     router.navigate(resolveRouterPath('login'));
     // window.location.href = '/login';

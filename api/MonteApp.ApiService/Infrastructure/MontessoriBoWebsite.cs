@@ -7,6 +7,8 @@ namespace MonteApp.ApiService.Infrastructure;
 public interface IMontessoriBoWebsite
 {
     Task<HttpResponseMessage> LoginAsync(string email, string password);
+    Task<HttpResponseMessage> LogoutAsync(string csrfToken);
+    Task<HttpResponseMessage> GetPadresPageAsync();
     Task<string> GetLicenciasPoCAsync();
 }
 
@@ -16,8 +18,10 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
     private readonly HttpClient _client;
     public const string BaseUrl = "https://montessori.bo/principal/public";
     public const string LoginUrl = $"{BaseUrl}/login";
+    public const string LogoutUrl = $"{BaseUrl}/logout";
     public const string SistemaPadresId = "2";
     public const string LoginPadresUrl = $"{LoginUrl}?sistema={SistemaPadresId}";
+    public const string PadresUrl = $"{BaseUrl}/padres";
     public const string SubsysLicenciasUrl = $"{BaseUrl}/LicenciasP";
     public const string SubsysLicencias_LicenciasAlumnosUrl = $"{SubsysLicenciasUrl}/licencias_alumnos.php?id=";
 
@@ -48,6 +52,21 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
 
         // 4. Send POST request to login
         return await _client.PostAsync(LoginUrl, formData);
+    }
+
+    public async Task<HttpResponseMessage> LogoutAsync(string csrfToken)
+    {
+        var formData = new FormUrlEncodedContent(new[]
+        {
+                new KeyValuePair<string, string>("_token", csrfToken)
+            });
+
+        return await _client.PostAsync(LogoutUrl, formData);
+    }
+
+    public async Task<HttpResponseMessage> GetPadresPageAsync()
+    {
+        return await _client.GetAsync(PadresUrl);
     }
 
     public Task<string> GetLicenciasPoCAsync()
