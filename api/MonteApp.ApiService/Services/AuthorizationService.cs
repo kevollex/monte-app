@@ -87,7 +87,7 @@ public class AuthorizationService : IAuthorizationService
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1), // TODO: Make configurable
+            expires: DateTime.UtcNow.AddHours(48), // TODO: Make configurable, decrease
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

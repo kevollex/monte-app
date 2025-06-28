@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonteApp.ApiService.Services;
@@ -6,6 +7,7 @@ namespace MonteApp.ApiService.Controllers
 {
     // TODO: add [controller] and versioning to route
     [ApiController]
+    [Authorize]
     public class SubSystemsController : ControllerBase
     {
         private readonly ISubSystemsService _subSystemsService;

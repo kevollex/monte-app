@@ -59,6 +59,9 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 app.MapDefaultEndpoints();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.Run();
 
 // TODO: Move this method to a service class
