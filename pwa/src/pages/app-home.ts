@@ -1,208 +1,128 @@
-import { LitElement, css, html } from 'lit';
-import { property, customElement } from 'lit/decorators.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { resolveRouterPath } from '../router';
-
-import { consume } from '@lit/context';
-import { type AbsencesService, absencesServiceContext } from '../services/absences-service/absences-service-context'; 
-
+import { LitElement, html, css } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { router, resolveRouterPath } from '../router';
+import '../components/card-app';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
-import '@shoelace-style/shoelace/dist/components/input/input.js';
-
-import { styles } from '../styles/shared-styles';
 
 @customElement('app-home')
 export class AppHome extends LitElement {
-  @consume({ context: absencesServiceContext }) 
-  private absencesService?: AbsencesService;
 
-  // For more information on using properties and state in lit
-  // check out this link https://lit.dev/docs/components/properties/
-  @property() message = 'Welcome!';
+  static styles = css`
+    :host {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100dvh;
+    background-color: var(--app-background, rgb(255, 255, 255));
+    box-sizing: border-box;
+    padding: 24px;
+  }
+    .container {
+    width: 100%;
+    max-width: 1024px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: space-between;
+  }
 
-  static styles = [
-    styles,
-    css`
-    #welcomeBar {
+    .header {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      flex-direction: column;
+      margin-bottom: 16px;
     }
 
-    #welcomeCard,
-    #infoCard {
-      padding: 18px;
-      padding-top: 0px;
+    .logo {
+      width: 70px;
+      background-color: white;
+      border-radius: 30px;
     }
 
-    sl-card::part(footer) {
-      display: flex;
-      justify-content: flex-end;
+    .icon {
+      width: 40px;
+      cursor: pointer;
+      background-color: #5e8bff;
+      border-radius: 50%;
     }
 
-    @media(min-width: 750px) {
-      sl-card {
-        width: 70vw;
-      }
+    .username {
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 24px;
     }
 
-
-    @media (horizontal-viewport-segments: 2) {
-      #welcomeBar {
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
-      }
-
-      #welcomeCard {
-        margin-right: 64px;
-      }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      width: 100%;
+      justify-items: center;
     }
-  `];
 
-  @property() sqlServerInfoResult = 'Loading...';
+      sl-button::part(base) {
+  background-color: #5e8bff;
+  color: white;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 16px;
+  height: 40px;
+  margin-top: 50px;
+  height: 40px;
+  width: 200px;
+}
 
-  async firstUpdated() {
-    // this method is a lifecycle event in lit
-    // for more info check out the lit docs https://lit.dev/docs/components/lifecycle/
-    console.log('This is your home page');
-    // TODO Delete this when we are done testing. Just here to test the API call.
-    try {
-      const result = await this.absencesService?.getSqlServerInfo();
-      this.sqlServerInfoResult = JSON.stringify(result, null, 2);
-      
-    } catch (error: any) {
-      if (error.response) {
-        this.sqlServerInfoResult = `Error: ${error.response.statusText}`;
-      } else {
-        this.sqlServerInfoResult = 'Request failed.';
-      }
-    }
-    console.log(this.sqlServerInfoResult);
-    console.log('✅');
+sl-button::part(base):hover {
+  background-color: #4c7dff;
+}
+    @media (prefers-color-scheme: dark) {
+  :host {
+    background-color: #1c1c1c;
   }
 
-  share() {
-    if ((navigator as any).share) {
-      (navigator as any).share({
-        title: 'PWABuilder pwa-starter',
-        text: 'Check out the PWABuilder pwa-starter!',
-        url: 'https://github.com/pwa-builder/pwa-starter',
-      });
-    }
+  .username {
+    color: white;
   }
+}
 
-  @property() licenciasResult = '';
-  @property() email = '';
-  @property() password = '';
-
-  async getLicenciasPoC() {
-    if (!this.email || !this.password) {
-      this.licenciasResult = 'Please enter email and password.';
-      return;
-    }
-    this.licenciasResult = 'Loading...';
-    try {
-      const res = await this.absencesService?.getLicenciasPoC(this.email, this.password);
-      this.licenciasResult = res ?? '';
-    } catch (e: any) {
-      if (e.response) {
-        this.licenciasResult = `Error: ${e.response.statusText}`;
-      } else {
-        this.licenciasResult = 'Request failed.';
+    @media (min-width: 1024px) {
+      .grid {
+        gap: 24px;
       }
     }
+  `;
+
+  logout() {
+    localStorage.removeItem('jwt');
+    router.navigate(resolveRouterPath('login'));
+    // window.location.href = '/login';
   }
 
   render() {
     return html`
-      <app-header></app-header>
-
-      <main>
-        <div id="welcomeBar">
-          <sl-card id="welcomeCard">
-            <div slot="header">
-              <h2>${this.message}</h2>
-            </div>
-
-            <p>
-              For more information on the PWABuilder pwa-starter, check out the
-              <a href="https://docs.pwabuilder.com/#/starter/quick-start">
-                documentation</a>.
-            </p>
-
-            <p id="mainInfo">
-              Welcome to the
-              <a href="https://pwabuilder.com">PWABuilder</a>
-              pwa-starter! Be sure to head back to
-              <a href="https://pwabuilder.com">PWABuilder</a>
-              when you are ready to ship this PWA to the Microsoft Store, Google Play
-              and the Apple App Store!
-            </p>
-
-            ${'share' in navigator
-              ? html`<sl-button slot="footer" variant="default" @click="${this.share}">
-                        <sl-icon slot="prefix" name="share"></sl-icon>
-                        Share this Starter!
-                      </sl-button>`
-              : null}
-          </sl-card>
-
-          <sl-card id="infoCard">
-            <h2>Technology Used</h2>
-
-            <ul>
-              <li>
-                <a href="https://www.typescriptlang.org/">TypeScript</a>
-              </li>
-
-              <li>
-                <a href="https://lit.dev">lit</a>
-              </li>
-
-              <li>
-                <a href="https://shoelace.style/">Shoelace</a>
-              </li>
-
-              <li>
-                <a href="https://github.com/thepassle/app-tools/blob/master/router/README.md"
-                  >App Tools Router</a>
-              </li>
-            </ul>
-          </sl-card>
-
-          <sl-card id="sqlServerCard">
-            <h2>Test SQL Server Endpoint</h2>
-            <p>${this.sqlServerInfoResult}</p>
-          </sl-card>
-          
-          <sl-card id="licenciasCard">
-          <h2>Test LicenciasPoC Endpoint</h2>
-          <sl-input
-            label="Email"
-            type="email"
-            .value=${this.email}
-            @sl-input=${(e: any) => { this.email = e.target.value; }}
-            style="margin-bottom: 8px;"
-          ></sl-input>
-          <sl-input
-            label="Password"
-            type="password"
-            .value=${this.password}
-            @sl-input=${(e: any) => { this.password = e.target.value; }}
-            style="margin-bottom: 8px;"
-          ></sl-input>
-          <sl-button variant="primary" @click=${this.getLicenciasPoC}>Get Licencias</sl-button>
-          <div style="white-space: pre-wrap; margin-top: 8px; border: 1px solid #ccc; padding: 8px; border-radius: 4px;">
-            ${unsafeHTML(this.licenciasResult)}
-          </div>
-        </sl-card>
-
-          <sl-button href="${resolveRouterPath('about')}" variant="primary">Navigate to About</sl-button>
+    <main>
+        <div class="container">
+        <div class="header">
+            <img src="/assets/logo.png" class="logo" />
+            <img src="/assets/notification.png" class="icon" />
         </div>
-      </main>
+
+        <div class="username">Nombre del padre</div>
+
+        <div class="grid">
+            <card-app label="Control Semanal" color="#A8E6CF" textColor="#2E7D32"></card-app>
+            <card-app label="Circulares" color="#FFF9B0" textColor="#9C6B00"></card-app>
+            <card-app label="Licencias" color="#D9C8F0" textColor="#6A1B9A"></card-app>
+            <card-app label="Cartas" color="#FFCDD2" textColor="#B71C1C"></card-app>
+        </div>
+
+        <div style="display:flex; justify-content:center;">
+            <sl-button @click=${this.logout}>Salir</sl-button>
+        </div>
+        </div>
+    </main>
     `;
   }
 }

@@ -125,8 +125,10 @@ export class AppLogin extends LitElement {
       try {
           const res = await this.authService?.login(this.email, this.password);
           if (res) {
+            console.log('Login successful');
             this.jwtToken = res;
             localStorage.setItem('jwt', this.jwtToken);
+            
             router.navigate(resolveRouterPath('home'));
           } else {
             this.error = 'Credenciales inválidas.';
