@@ -53,6 +53,7 @@ builder.Services.AddScoped(sp =>
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubSystemsService, SubSystemsService>();
+builder.Services.AddScoped<IMontessoriBoWrapperService, MontessoriBoWrapperService>();
 // Infrastructure
 builder.Services.AddScoped<IDatabase, Database>();
 builder.Services.AddScoped<IMontessoriBoWebsite, MontessoriBoWebsite>();

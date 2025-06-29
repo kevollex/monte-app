@@ -9,6 +9,8 @@ import { router } from './router';
 import { provide } from '@lit/context';
 import { authServiceContext } from './services/auth-service/auth-service-context';
 import { AuthService } from './services/auth-service/auth-service';
+import { montessoriBoWrapperServiceContext } from './services/montessoribowrapper-service/montessoribowrapper-service-context';
+import { MontessoriBoWrapperService } from './services/montessoribowrapper-service/montessoribowrapper-service';
 import { absencesServiceContext } from './services/absences-service/absences-service-context';
 import { AbsencesService } from './services/absences-service/absences-service';
 
@@ -19,6 +21,8 @@ export class AppIndex extends LitElement {
   authService = new AuthService();
   @provide({ context: absencesServiceContext })
   absencesService = new AbsencesService();
+  @provide({ context: montessoriBoWrapperServiceContext })
+  montessoriBoWrapperService = new MontessoriBoWrapperService();
 
   static styles = css`
     main {

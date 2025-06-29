@@ -12,7 +12,7 @@ namespace MonteApp.ApiService.Services;
 public interface IAuthService
 {
     Task<string> LoginAsync(string email, string password);
-    Task LogoutAsync(string jwtToken);
+    Task LogoutAsync(string sessionId);
 }
 
 public class AuthService : IAuthService
@@ -81,26 +81,10 @@ public class AuthService : IAuthService
         return result;
     }
 
-    public async Task LogoutAsync(string jwtToken)
+    public async Task LogoutAsync(string sessionId)
     {
-        // Parse JWT and extract jti claim
-        var handler = new JwtSecurityTokenHandler();
-        JwtSecurityToken jwt;
-        try
-        {
-            jwt = handler.ReadJwtToken(jwtToken);
-        }
-        catch
-        {
-            throw new UnauthorizedAccessException("Invalid JWT token.");
-        }
-
-        var jti = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-        if (string.IsNullOrEmpty(jti))
-            throw new UnauthorizedAccessException("JWT does not contain a session id.");
-
         // Lookup session in DB
-        SessionInfo? session = await _database.GetSessionByIdAsync(jti);
+        SessionInfo? session = await _database.GetSessionByIdAsync(sessionId);
         if (session == null)
             throw new UnauthorizedAccessException("Session not found.");
 
@@ -112,7 +96,7 @@ public class AuthService : IAuthService
         }
 
         // Mark session as revoked in DB
-        await _database.RevokeSessionAsync(jti);
+        await _database.RevokeSessionAsync(sessionId);
     }
 
     private string GenerateJWTToken(string email, string jwtId)

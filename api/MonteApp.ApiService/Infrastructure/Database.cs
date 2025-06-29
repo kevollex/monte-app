@@ -10,6 +10,7 @@ public interface IDatabase
     Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt);
     Task<SessionInfo?> GetSessionByIdAsync(string id);
     Task RevokeSessionAsync(string id);
+    Task <User> GetUserBySessionIdAsync(string sessionId);
 }
 
 
@@ -123,5 +124,32 @@ class Database(SqlConnection connection) : IDatabase
         var cmd = new SqlCommand("UPDATE sessions SET revoked_at = GETUTCDATE() WHERE id = @id", _connection);
         cmd.Parameters.AddWithValue("@id", id);
         await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<User> GetUserBySessionIdAsync(string sessionId)
+    {
+        if (_connection.State != System.Data.ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        var cmd = new SqlCommand(@"
+            SELECT u.id, u.email, u.full_name, u.created_at
+            FROM sessions s
+            INNER JOIN users u ON s.user_id = u.id
+            WHERE s.id = @SessionId", _connection);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+        var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return new User
+            {
+                Id = reader.GetInt32(0),
+                Email = reader.GetString(1),
+                FullName = reader.GetString(2),
+                CreatedAt = reader.GetDateTime(3)
+            };
+        }
+
+        throw new InvalidOperationException("User not found.");
     }
 }

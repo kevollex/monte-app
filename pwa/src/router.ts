@@ -7,7 +7,6 @@ if (!(globalThis as any).URLPattern) {
 }
 
 import { Router } from '@thepassle/app-tools/router.js';
-import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
 
 // @ts-ignore
 import { title } from '@thepassle/app-tools/router/plugins/title.js';
@@ -17,27 +16,53 @@ import './pages/app-login.js';
 
 const baseURL: string = (import.meta as any).env.BASE_URL;
 
-export const router = new Router({
-    routes: [
+const routes = [
+  {
+    path: resolveRouterPath(),
+    title: 'Home',
+    render: () => html`<app-home></app-home>`
+  },
+  {
+    path: resolveRouterPath('login'),
+    title: 'Login',
+    plugins: [
       {
-        path: resolveRouterPath(),
-        title: 'Login',
-        render: () => html`<app-login></app-login>`
-      },
-      {
-        path: resolveRouterPath('home'),
-        title: 'Home',
-        render: () => html`<app-home></app-home>`
-      },
-      {
-        path: resolveRouterPath('about'),
-        title: 'About',
-        plugins: [
-          lazy(() => import('./pages/app-about/app-about.js')),
-        ],
-        render: () => html`<app-about></app-about>`
+        name: 'CheckAuthenticationForLoginPageGuard',
+        shouldNavigate: () => ({
+          condition: () => {
+              const jwt = localStorage.getItem('jwt');
+              if (!jwt) {
+                return true;
+              }
+              return false;
+          },
+          redirect: resolveRouterPath('home'),
+        })
       }
-    ]
+    ],
+    render: () => html`<app-login></app-login>`,
+  }
+];
+
+  export const router = new Router({
+      routes,
+      plugins : [
+        {
+          name: 'CheckAuthenticationForAllPagesGuard',
+          shouldNavigate: (context) => ({
+            condition: () => {
+              const url = new URL(context.url, window.location.origin);
+              if (url.pathname.endsWith('login')) return true;
+              const jwt = localStorage.getItem('jwt');
+              if (!jwt) {
+                return false;
+              }
+              return true;
+            },
+            redirect: resolveRouterPath('login'),
+          }),
+        }
+      ]
   });
 
   // This function will resolve a path with whatever Base URL was passed to the vite build process.

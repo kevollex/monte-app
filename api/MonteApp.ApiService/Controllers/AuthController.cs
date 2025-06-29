@@ -30,14 +30,8 @@ namespace MonteApp.ApiService.Controllers
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            // Grab the JWT from the Authorization header
-            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
-                return Unauthorized("Missing or invalid Authorization header.");
-
-            var jwtToken = authHeader.Substring("Bearer ".Length).Trim();
-
-            await _authService.LogoutAsync(jwtToken);
+            var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
+            await _authService.LogoutAsync(jti);
 
             return Ok("Logged out");
         }
