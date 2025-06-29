@@ -9,26 +9,49 @@ public interface IMontessoriBoWebsite
     Task<HttpResponseMessage> LoginAsync(string email, string password);
     Task<HttpResponseMessage> LogoutAsync(string csrfToken);
     Task<HttpResponseMessage> GetPadresPageAsync();
-    Task<string> GetLicenciasPoCAsync();
+    Task<HttpResponseMessage> GetLicenciasPageAsync();
+
+    CookieCollection GetCookies();
+    void SetCookies(CookieCollection cookies);
 }
 
 // TODO: Inject HTTP client
 public class MontessoriBoWebsite : IMontessoriBoWebsite
 {
     private readonly HttpClient _client;
-    public const string BaseUrl = "https://montessori.bo/principal/public";
+    private readonly CookieContainer _cookieContainer;
+    public const string HomeUrl = "https://montessori.bo";
+    public const string BaseUrl = $"{HomeUrl}/principal/public";
+    // public const string BaseUrl = "https://montessori.bo/principal/public";
     public const string LoginUrl = $"{BaseUrl}/login";
     public const string LogoutUrl = $"{BaseUrl}/logout";
     public const string SistemaPadresId = "2";
     public const string LoginPadresUrl = $"{LoginUrl}?sistema={SistemaPadresId}";
     public const string PadresUrl = $"{BaseUrl}/padres";
-    public const string SubsysLicenciasUrl = $"{BaseUrl}/LicenciasP";
+    public const string SubsysLicenciasUrl = $"{HomeUrl}/LicenciasP";
     public const string SubsysLicencias_LicenciasAlumnosUrl = $"{SubsysLicenciasUrl}/licencias_alumnos.php?id=";
 
     // TODO: Inject HTTP client via constructor
-    public MontessoriBoWebsite(HttpClient client)
+    public MontessoriBoWebsite(HttpClient client,
+                              CookieContainer cookieContainer)
     {
+        _cookieContainer = cookieContainer ?? throw new ArgumentNullException(nameof(cookieContainer));
         _client = client ?? throw new ArgumentNullException(nameof(client));
+    }
+
+    public CookieCollection GetCookies()
+    {
+        return _cookieContainer.GetCookies(new Uri(HomeUrl));
+    }
+
+    public void SetCookies(CookieCollection cookies)
+    {
+        ArgumentNullException.ThrowIfNull(cookies);
+
+        foreach (Cookie cookie in cookies)
+        {
+            _cookieContainer.Add(new Uri(HomeUrl), cookie);
+        }
     }
 
     public async Task<HttpResponseMessage> LoginAsync(string email, string password)
@@ -58,8 +81,8 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
     {
         var formData = new FormUrlEncodedContent(new[]
         {
-                new KeyValuePair<string, string>("_token", csrfToken)
-            });
+            new KeyValuePair<string, string>("_token", csrfToken)
+        });
 
         return await _client.PostAsync(LogoutUrl, formData);
     }
@@ -69,9 +92,8 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
         return await _client.GetAsync(PadresUrl);
     }
 
-    public Task<string> GetLicenciasPoCAsync()
+    public async Task<HttpResponseMessage> GetLicenciasPageAsync()
     {
-        throw new NotImplementedException();
+        return await _client.GetAsync(SubsysLicenciasUrl);
     }
-
 }

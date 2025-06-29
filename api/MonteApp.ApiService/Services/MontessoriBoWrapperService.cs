@@ -8,11 +8,10 @@ namespace MonteApp.ApiService.Services;
 
 public interface IMontessoriBoWrapperService
 {
-    // Define methods that will be implemented by the service
-    // For example:
     Task<HomeData> GetHomeDataAsync(string sessionId);
-    // Task<string> GetLicensesAsync();
+    Task<string> GetLicenciasPageAsync(string sessionId);
 }
+
 public class MontessoriBoWrapperService : IMontessoriBoWrapperService
 {
     private readonly IMontessoriBoWebsite _montessoriBoWebsite;
@@ -41,6 +40,32 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         );
 
         return homeData;
+    }
+
+    public async Task<string> GetLicenciasPageAsync(string sessionId)
+    {
+        // Lookup session in DB
+        SessionInfo? session = await _database.GetSessionByIdAsync(sessionId) ?? throw new UnauthorizedAccessException("Session not found.");
+
+        // Restore cookies from session
+        if (session.Cookies != null)
+        {
+            _montessoriBoWebsite.SetCookies(session.Cookies);
+        }
+        string result;
+
+        HttpResponseMessage response = await _montessoriBoWebsite.GetLicenciasPageAsync();
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            result = responseContent;
+        }
+        else
+        {
+            throw new UnauthorizedAccessException("Error retrieving Licencias page: " + response.ReasonPhrase);
+        }
+
+        return result;
     }
 }
 

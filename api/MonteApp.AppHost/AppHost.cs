@@ -38,6 +38,7 @@ var creationScript = $$"""
         created_at DATETIME DEFAULT GETDATE(),
         expires_at DATETIME NULL,
         revoked_at DATETIME NULL,
+        cookies NVARCHAR(MAX) NULL, -- Store cookies as a string
         FOREIGN KEY (user_id) REFERENCES [users](id) ON DELETE CASCADE
     );
     GO

@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using MonteApp.ApiService.Models;
 
@@ -5,43 +7,16 @@ namespace MonteApp.ApiService.Infrastructure;
 
 public interface IDatabase
 {
-    Task<string> GetSQLServerInfoAsync();
     Task<int> FindOrCreateUserAsync(string email, string password, string fullName);
-    Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt);
+    Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt, CookieCollection cookies);
     Task<SessionInfo?> GetSessionByIdAsync(string id);
     Task RevokeSessionAsync(string id);
     Task <User> GetUserBySessionIdAsync(string sessionId);
 }
 
-
-class Database(SqlConnection connection) : IDatabase
+public class Database(SqlConnection connection) : IDatabase
 {
     private readonly SqlConnection _connection = connection;
-
-    public async Task<string> GetSQLServerInfoAsync()
-    {
-        string result = string.Empty;
-        var sql = @"
-            SELECT 
-                'Connected to SQL Server: ' + @@SERVERNAME +
-                ', Version: ' + CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR) +
-                ', Edition: ' + CAST(SERVERPROPERTY('Edition') AS NVARCHAR) +
-                ', UTC Time: ' + CONVERT(NVARCHAR, GETUTCDATE(), 120)
-        ";
-
-        if (_connection.State != System.Data.ConnectionState.Open)
-            await _connection.OpenAsync();
-
-        using var command = new SqlCommand(sql, _connection);
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            result = reader.GetString(0);
-        }
-
-        return result;
-    }
 
     public async Task<int> FindOrCreateUserAsync(string email, string password, string fullName)
     {
@@ -72,20 +47,21 @@ class Database(SqlConnection connection) : IDatabase
         return userId; // Return the newly created user's ID
     }
 
-    public async Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt)
+    public async Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt, CookieCollection cookies)
     {
         if (_connection.State != System.Data.ConnectionState.Open)
             await _connection.OpenAsync();
 
         var cmd = new SqlCommand(@"
-            INSERT INTO sessions (user_id, csrf_token, jwt_id, created_at, expires_at)
+            INSERT INTO sessions (user_id, csrf_token, jwt_id, created_at, expires_at, cookies)
             OUTPUT INSERTED.id
-            VALUES (@UserId, @CsrfToken, @JwtId, GETUTCDATE(), @ExpiresAt)
+            VALUES (@UserId, @CsrfToken, @JwtId, GETUTCDATE(), @ExpiresAt, @Cookies)
         ", _connection);
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@CsrfToken", csrfToken);
         cmd.Parameters.AddWithValue("@JwtId", jwtId);
         cmd.Parameters.AddWithValue("@ExpiresAt", expiresAt);
+        cmd.Parameters.AddWithValue("@Cookies", SerializeCookies(cookies));
 
         await cmd.ExecuteNonQueryAsync();
 
@@ -95,12 +71,13 @@ class Database(SqlConnection connection) : IDatabase
         return (int)sessionId;
     }
 
+
     public async Task<SessionInfo?> GetSessionByIdAsync(string id)
     {
         if (_connection.State != System.Data.ConnectionState.Open)
             await _connection.OpenAsync();
 
-        var cmd = new SqlCommand("SELECT id, user_id, csrf_token FROM sessions WHERE id = @id", _connection);
+        var cmd = new SqlCommand("SELECT id, user_id, csrf_token, cookies FROM sessions WHERE id = @id", _connection);
         cmd.Parameters.AddWithValue("@id", id);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -110,7 +87,8 @@ class Database(SqlConnection connection) : IDatabase
             {
                 Id = reader.GetInt32(0),
                 UserId = reader.GetInt32(1),
-                CsrfToken = reader.GetString(2)
+                CsrfToken = reader.GetString(2),
+                Cookies = reader.IsDBNull(3) ? null : DeserializeCookies(reader.GetString(3))
             };
         }
         return null;
@@ -151,5 +129,44 @@ class Database(SqlConnection connection) : IDatabase
         }
 
         throw new InvalidOperationException("User not found.");
+    }
+    
+    private static string SerializeCookies(CookieCollection cookies)
+    {
+        var cookieList = new List<object>();
+        foreach (Cookie cookie in cookies)
+        {
+            cookieList.Add(new
+            {
+                cookie.Name,
+                cookie.Value,
+                cookie.Domain,
+                cookie.Path,
+                cookie.Expires,
+                cookie.Secure,
+                cookie.HttpOnly
+            });
+        }
+        return JsonSerializer.Serialize(cookieList);
+    }
+
+    private static CookieCollection DeserializeCookies(string json)
+    {
+        var cookies = new CookieCollection();
+        var cookieList = JsonSerializer.Deserialize<List<Cookie>>(json);
+        if (cookieList != null)
+        {
+            foreach (var c in cookieList)
+            {
+                var cookie = new Cookie(c.Name, c.Value, c.Path, c.Domain)
+                {
+                    Expires = c.Expires,
+                    Secure = c.Secure,
+                    HttpOnly = c.HttpOnly
+                };
+                cookies.Add(cookie);
+            }
+        }
+        return cookies;
     }
 }

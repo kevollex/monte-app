@@ -3,6 +3,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { consume } from '@lit/context';
 import { router, resolveRouterPath } from '../router';
 import '../components/card-app';
+import '../components/browser-view';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
@@ -22,6 +23,8 @@ export class AppHome extends LitElement {
 
   @property() username = 'Nombre del padre';
   @property() subSystems: any[] = []; // TODO: define a type for subsystem
+
+  @property() licenciasResult? = '';
 
   private subSystemsCardsStyles: Record<string, { label: string; color: string; textColor: string }> = {
     "Licencias": { label: "Licencias", color: "#D9C8F0", textColor: "#6A1B9A" }
@@ -120,6 +123,9 @@ sl-button::part(base):hover {
       const response = await this.montessoriBoWrapperService?.getHomeData();
       this.username = response.username;
       this.subSystems = response.subSystems;
+
+      // TODO: Remove
+      this.licenciasResult = await this.montessoriBoWrapperService?.getLicenciasPage();
     } catch (e) {
       // handle error (optional)
     }
@@ -129,7 +135,6 @@ sl-button::part(base):hover {
     await this.authService?.logout();
     localStorage.removeItem('jwt');
     router.navigate(resolveRouterPath('login'));
-    // window.location.href = '/login';
   }
 
   render() {
@@ -157,10 +162,12 @@ sl-button::part(base):hover {
                 ></card-app>
               `;}
             )}
-
+        </div>
         <div style="display:flex; justify-content:center;">
             <sl-button @click=${this.logout}>Salir</sl-button>
         </div>
+        <div style="margin-top: 8px;">
+          <browser-view .htmlContent=${this.licenciasResult}></browser-view>
         </div>
     </main>
     `;

@@ -24,5 +24,14 @@ namespace MonteApp.ApiService.Controllers
             return Ok(await _montessoriBoWrapperService.GetHomeDataAsync(jti));
         }
 
+        [HttpGet("licencias")]
+        public async Task<IActionResult> GetLicenciasPage()
+        {
+            var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
+            var licencias = await _montessoriBoWrapperService.GetLicenciasPageAsync(jti);
+
+            return Content(licencias, "text/html");
+        }
+
     }
 }

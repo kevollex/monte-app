@@ -1,5 +1,6 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using HtmlAgilityPack;
@@ -51,6 +52,7 @@ public class AuthService : IAuthService
             var appDiv = htmlDoc.DocumentNode.SelectSingleNode("//div[@id='app']") ?? throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
 
             // Login Success. Crawl padres page for data
+            // No need to get or set cookies here, they are already set in the HttpClientHandler used by MontessoriBoWebsite for the request lifetime
             var padresPage = await _montessoriBoWebsite.GetPadresPageAsync();
             var padresPageContent = await padresPage.Content.ReadAsStringAsync();
             var padresHtmlDoc = new HtmlDocument();
@@ -66,7 +68,8 @@ public class AuthService : IAuthService
 
             int userId = await _database.FindOrCreateUserAsync(email, password, padreFullNameValue);
             DateTime expiresAt = DateTime.UtcNow.AddHours(48); // TODO: Make configurable, decrease
-            int sessionId = await _database.CreateSessionAsync(userId, jwtId, tokenValue, expiresAt);
+            CookieCollection cookies = _montessoriBoWebsite.GetCookies();
+            int sessionId = await _database.CreateSessionAsync(userId, jwtId, tokenValue, expiresAt, cookies);
 
             // Login successful, now we can proceed to MonteApp
             // Generate JWT with sessionId as jti
@@ -84,9 +87,13 @@ public class AuthService : IAuthService
     public async Task LogoutAsync(string sessionId)
     {
         // Lookup session in DB
-        SessionInfo? session = await _database.GetSessionByIdAsync(sessionId);
-        if (session == null)
-            throw new UnauthorizedAccessException("Session not found.");
+        SessionInfo? session = await _database.GetSessionByIdAsync(sessionId) ?? throw new UnauthorizedAccessException("Session not found.");
+
+        // Restore cookies from session
+        if (session.Cookies != null)
+        {
+            _montessoriBoWebsite.SetCookies(session.Cookies);
+        }
 
         // Perform logout via MontessoriBoWebsite using session.csrf_token
         var logoutResponse = await _montessoriBoWebsite.LogoutAsync(session.CsrfToken);
