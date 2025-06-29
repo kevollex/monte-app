@@ -1,0 +1,15 @@
+meta {
+  name: HomeData
+  type: http
+  seq: 5
+}
+
+get {
+  url: https://localhost:7448/home
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: set token value
+}
