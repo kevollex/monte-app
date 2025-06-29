@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonteApp.ApiService\MonteApp.ApiService.csproj" />
-    <ProjectReference Include="..\MonteApp.Web\MonteApp.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
