@@ -137,3 +137,9 @@ dist
 
 # TS declaration files
 *.d.ts
+
+# Archivos de servicio de Firebase (credenciales)
+/api/MonteApp.ApiService/firebase-service-account.json
+
+# MacOS
+.DS_Store
