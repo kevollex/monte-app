@@ -19,6 +19,15 @@ Progressive Web App and its companion API
 - PWA Builder (optional)
   - Install with `npm i -g @pwabuilder/cli`
 
+### SSL setup
+
+HTTPS mandatory. Trust NET's and generate yours.
+```bash
+dotnet dev-certs https --trust
+mkdir cert
+openssl req -x509 -newkey rsa:2048 -nodes -keyout cert/key.pem -out cert/cert.pem -days 365
+```
+
 ### api
 
 ```bash

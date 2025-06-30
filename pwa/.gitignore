@@ -137,3 +137,6 @@ dist
 
 # TS declaration files
 *.d.ts
+
+# SSL dev certs
+*.pem
