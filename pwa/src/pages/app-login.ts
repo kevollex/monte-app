@@ -140,26 +140,45 @@ export class AppLogin extends LitElement {
 
     render() {
       return html`
-        <img src="/assets/logo.png" alt="Logo Colegio Montessori" />
-        <h2>Inicio de sesión</h2>
+        <form
+          @submit=${(e: Event) => {
+            e.preventDefault();
+            this.login();
+          }}
+          style="display: flex; flex-direction: column; align-items: center; width: 100%;"
+        >
+          <img src="/assets/logo.png" alt="Logo Colegio Montessori" />
+          <h2>Inicio de sesión</h2>
 
-        <sl-input
+          <sl-input
             label="E-mail"
             type="email"
             .value=${this.email}
             @sl-input=${(e: any) => this.email = e.target.value}
-        ></sl-input>
+            autocomplete="username"
+            required
+            autofocus
+            style="margin-bottom: 12px;"
+          ></sl-input>
 
-        <sl-input
+          <sl-input
             label="Password"
             type="password"
             .value=${this.password}
             @sl-input=${(e: any) => this.password = e.target.value}
-        ></sl-input>
+            autocomplete="current-password"
+            required
+            style="margin-bottom: 12px;"
+          ></sl-input>
 
-        ${this.error ? html`<div class="error">${this.error}</div>` : null}
+          ${this.error ? html`<div class="error">${this.error}</div>` : null}
 
-        <sl-button variant="primary" @click=${this.login}>Ingresar</sl-button>
+          <sl-button
+            variant="primary"
+            type="submit"
+            style="margin-top: 16px;"
+          >Ingresar</sl-button>
+        </form>
         `;
     }
 }
