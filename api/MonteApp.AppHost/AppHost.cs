@@ -39,6 +39,7 @@ var creationScript = $$"""
         expires_at DATETIME NULL,
         revoked_at DATETIME NULL,
         cookies NVARCHAR(MAX) NULL, -- Store cookies as a string
+        updated_at DATETIME NULL, -- When cookies were last updated
         FOREIGN KEY (user_id) REFERENCES [users](id) ON DELETE CASCADE
     );
     GO
@@ -55,8 +56,7 @@ var apiService = builder.AddProject<Projects.MonteApp_ApiService>("apiservice")
 builder.AddNpmApp("pwavite", "../../pwa")
     .WithExternalHttpEndpoints()
     .WithEnvironment("BROWSER", "none")
-    .WithHttpEndpoint(env: "VITE_PORT")
-    .WithHttpHealthCheck("/health")
+    .WithHttpsEndpoint(env: "VITE_PORT")
     .WithReference(cache)
     .WaitFor(cache)
     .WithReference(apiService)

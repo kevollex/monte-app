@@ -48,12 +48,13 @@ builder.Services.AddScoped<CookieContainer>();
 builder.Services.AddScoped<IMontessoriBoWebsite, MontessoriBoWebsite>(sp =>
 {
     var cookieContainer = sp.GetRequiredService<CookieContainer>();
+    var database = sp.GetRequiredService<IDatabase>();
     var client = new HttpClient(new HttpClientHandler
     {
         CookieContainer = cookieContainer,
         UseCookies = true
     }, disposeHandler: false);
-    return new MontessoriBoWebsite(client, cookieContainer);
+    return new MontessoriBoWebsite(client, cookieContainer, database);
 });
 
 var app = builder.Build();

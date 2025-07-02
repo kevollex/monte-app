@@ -25,7 +25,9 @@ HTTPS mandatory. Trust NET's and generate yours.
 ```bash
 dotnet dev-certs https --trust
 mkdir cert
-openssl req -x509 -newkey rsa:2048 -nodes -keyout cert/key.pem -out cert/cert.pem -days 365
+sudo apt install mkcert OR brew install mkcert   # If you have Homebrew
+mkcert -install
+mkcert -key-file cert/key.pem -cert-file cert/cert.pem localhost
 ```
 
 ### api

@@ -25,6 +25,6 @@ export class BrowserView extends LitElement {
   }
 
   render() {
-    return html`<iframe sandbox="allow-forms allow-scripts allow-same-origin"></iframe>`;
+    return html`<iframe sandbox="allow-forms allow-scripts allow-same-origin allow-modals allow-popups"></iframe>`;
   }
 }

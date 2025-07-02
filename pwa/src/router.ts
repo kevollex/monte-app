@@ -13,6 +13,7 @@ import { title } from '@thepassle/app-tools/router/plugins/title.js';
 
 import './pages/app-home.js';
 import './pages/app-login.js';
+import './pages/subsystem-view.js';
 
 const baseURL: string = (import.meta as any).env.BASE_URL;
 
@@ -41,7 +42,12 @@ const routes = [
       }
     ],
     render: () => html`<app-login></app-login>`,
-  }
+  },
+  {
+    path: resolveRouterPath('subsystem'),
+    title: 'Submódulo',
+    render: () => html`<subsystem-view></subsystem-view>`,
+  },
 ];
 
   export const router = new Router({

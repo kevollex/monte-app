@@ -5,7 +5,7 @@ export class MontessoriBoWrapperService {
     public async getHomeData(): Promise<any> {
         try {
             const response = await httpClient.get<any>(
-                `/api/home`
+                `/api/proxy/home`
             );
             return response.data;
         } catch (error) {
@@ -17,7 +17,7 @@ export class MontessoriBoWrapperService {
     public async getLicenciasPage(): Promise<string> {
         try {
             const response = await httpClient.get<string>(
-                `/api/licencias`
+                `/api/proxy/licencias`
             );
             return response.data;
         } catch (error) {

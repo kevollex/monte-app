@@ -8,10 +8,10 @@ namespace MonteApp.ApiService.Infrastructure;
 public interface IDatabase
 {
     Task<int> FindOrCreateUserAsync(string email, string password, string fullName);
-    Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt, CookieCollection cookies);
-    Task<SessionInfo?> GetSessionByIdAsync(string id);
+    Task <int> UpsertSessionAsync(SessionInfo sessionInfo);
+    Task<SessionInfo> GetSessionByIdAsync(string id);
     Task RevokeSessionAsync(string id);
-    Task <User> GetUserBySessionIdAsync(string sessionId);
+    Task<User> GetUserBySessionIdAsync(string sessionId);
 }
 
 public class Database(SqlConnection connection) : IDatabase
@@ -47,51 +47,33 @@ public class Database(SqlConnection connection) : IDatabase
         return userId; // Return the newly created user's ID
     }
 
-    public async Task<int> CreateSessionAsync(int userId, string jwtId, string csrfToken, DateTime expiresAt, CookieCollection cookies)
+    public async Task<SessionInfo> GetSessionByIdAsync(string id)
     {
+        SessionInfo sessionInfo = new SessionInfo();
+
         if (_connection.State != System.Data.ConnectionState.Open)
             await _connection.OpenAsync();
 
-        var cmd = new SqlCommand(@"
-            INSERT INTO sessions (user_id, csrf_token, jwt_id, created_at, expires_at, cookies)
-            OUTPUT INSERTED.id
-            VALUES (@UserId, @CsrfToken, @JwtId, GETUTCDATE(), @ExpiresAt, @Cookies)
-        ", _connection);
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        cmd.Parameters.AddWithValue("@CsrfToken", csrfToken);
-        cmd.Parameters.AddWithValue("@JwtId", jwtId);
-        cmd.Parameters.AddWithValue("@ExpiresAt", expiresAt);
-        cmd.Parameters.AddWithValue("@Cookies", SerializeCookies(cookies));
-
-        await cmd.ExecuteNonQueryAsync();
-
-        // Get the session id
-        cmd.CommandText = "SELECT TOP 1 id FROM sessions WHERE jwt_id = @JwtId";
-        var sessionId = await cmd.ExecuteScalarAsync();
-        return (int)sessionId;
-    }
-
-
-    public async Task<SessionInfo?> GetSessionByIdAsync(string id)
-    {
-        if (_connection.State != System.Data.ConnectionState.Open)
-            await _connection.OpenAsync();
-
-        var cmd = new SqlCommand("SELECT id, user_id, csrf_token, cookies FROM sessions WHERE id = @id", _connection);
+        var cmd = new SqlCommand("SELECT id, user_id, csrf_token, jwt_id, created_at, expires_at, revoked_at, cookies, updated_at FROM sessions WHERE id = @id", _connection);
         cmd.Parameters.AddWithValue("@id", id);
 
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            return new SessionInfo
+            sessionInfo = new SessionInfo
             {
                 Id = reader.GetInt32(0),
                 UserId = reader.GetInt32(1),
                 CsrfToken = reader.GetString(2),
-                Cookies = reader.IsDBNull(3) ? null : DeserializeCookies(reader.GetString(3))
+                JwtId = reader.GetString(3),
+                CreatedAt = reader.GetDateTime(4),
+                ExpiresAt = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                RevokedAt = reader.IsDBNull(6) ? null : reader.GetDateTime(6),
+                Cookies = reader.IsDBNull(7) ? null : DeserializeCookies(reader.GetString(7)),
+                UpdatedAt = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
             };
         }
-        return null;
+        return sessionInfo;
     }
 
     public async Task RevokeSessionAsync(string id)
@@ -99,7 +81,7 @@ public class Database(SqlConnection connection) : IDatabase
         if (_connection.State != System.Data.ConnectionState.Open)
             await _connection.OpenAsync();
 
-        var cmd = new SqlCommand("UPDATE sessions SET revoked_at = GETUTCDATE() WHERE id = @id", _connection);
+        var cmd = new SqlCommand("UPDATE sessions SET revoked_at = GETUTCDATE(), updated_at = GETUTCDATE() WHERE id = @id", _connection);
         cmd.Parameters.AddWithValue("@id", id);
         await cmd.ExecuteNonQueryAsync();
     }
@@ -168,5 +150,47 @@ public class Database(SqlConnection connection) : IDatabase
             }
         }
         return cookies;
+    }
+
+    public async Task<int> UpsertSessionAsync(SessionInfo sessionInfo)
+    {
+        if (_connection.State != System.Data.ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        var cmd = new SqlCommand(@"
+            MERGE INTO sessions AS target
+            USING (SELECT @Id AS id) AS source
+            ON (target.id = source.id)
+            WHEN MATCHED THEN
+                UPDATE SET
+                    user_id = @UserId,
+                    csrf_token = @CsrfToken,
+                    jwt_id = @JwtId,
+                    expires_at = @ExpiresAt,
+                    revoked_at = NULL, -- Reset revoked_at on update,
+                    cookies = @Cookies,
+                    updated_at = GETUTCDATE()
+            WHEN NOT MATCHED THEN
+                INSERT (user_id, csrf_token, jwt_id, created_at, expires_at, cookies)
+                VALUES (@UserId, @CsrfToken, @JwtId, GETUTCDATE(), @ExpiresAt, @Cookies)
+            OUTPUT inserted.id;
+        ", _connection);
+
+        cmd.Parameters.AddWithValue("@Id", sessionInfo.Id);
+        cmd.Parameters.AddWithValue("@UserId", sessionInfo.UserId);
+        cmd.Parameters.AddWithValue("@CsrfToken", sessionInfo.CsrfToken ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@JwtId", sessionInfo.JwtId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@ExpiresAt", sessionInfo.ExpiresAt ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@Cookies", sessionInfo.Cookies != null ? SerializeCookies(sessionInfo.Cookies) : (object)DBNull.Value);
+
+        var result = await cmd.ExecuteScalarAsync();
+        if (result != null && int.TryParse(result.ToString(), out int sessionId))
+        {
+            return sessionId;
+        }
+        else
+        {
+            throw new InvalidOperationException("Failed to upsert session.");
+        }
     }
 }

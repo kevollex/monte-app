@@ -24,8 +24,6 @@ export class AppHome extends LitElement {
   @property() username = 'Nombre del padre';
   @property() subSystems: any[] = []; // TODO: define a type for subsystem
 
-  @property() licenciasResult? = '';
-
   private subSystemsCardsStyles: Record<string, { label: string; color: string; textColor: string }> = {
     "Licencias": { label: "Licencias", color: "#D9C8F0", textColor: "#6A1B9A" }
     // TODO: add rest of the subsystems with their styles
@@ -124,8 +122,6 @@ sl-button::part(base):hover {
       this.username = response.username;
       this.subSystems = response.subSystems;
 
-      // TODO: Remove
-      this.licenciasResult = await this.montessoriBoWrapperService?.getLicenciasPage();
     } catch (e) {
       // handle error (optional)
     }
@@ -158,16 +154,13 @@ sl-button::part(base):hover {
                   label="${subsystem.name}",
                   color="${cardProps.color || ''}"
                   textColor="${cardProps.textColor || ''}"
-                  @click=${() => router.navigate(subsystem.route)}
+                  @click=${() => router.navigate(resolveRouterPath(subsystem.route))}
                 ></card-app>
               `;}
             )}
         </div>
         <div style="display:flex; justify-content:center;">
             <sl-button @click=${this.logout}>Salir</sl-button>
-        </div>
-        <div style="margin-top: 8px;">
-          <browser-view .htmlContent=${this.licenciasResult}></browser-view>
         </div>
     </main>
     `;

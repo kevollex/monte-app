@@ -1,18 +1,16 @@
 using System;
 using System.Net;
 using HtmlAgilityPack;
+using MonteApp.ApiService.Models;
 
 namespace MonteApp.ApiService.Infrastructure;
 
 public interface IMontessoriBoWebsite
 {
-    Task<HttpResponseMessage> LoginAsync(string email, string password);
-    Task<HttpResponseMessage> LogoutAsync(string csrfToken);
-    Task<HttpResponseMessage> GetPadresPageAsync();
-    Task<HttpResponseMessage> GetLicenciasPageAsync();
-
+    Task<string> LoginAsync(string email, string password);
+    Task LogoutAsync(string sessionId);
+    Task<string> GetStringAsync(string url, bool skipSessionUpsert = false, string sessionId = "");
     CookieCollection GetCookies();
-    void SetCookies(CookieCollection cookies);
 }
 
 // TODO: Inject HTTP client
@@ -20,44 +18,36 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
 {
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer;
-    public const string HomeUrl = "https://montessori.bo";
-    public const string BaseUrl = $"{HomeUrl}/principal/public";
-    // public const string BaseUrl = "https://montessori.bo/principal/public";
-    public const string LoginUrl = $"{BaseUrl}/login";
-    public const string LogoutUrl = $"{BaseUrl}/logout";
-    public const string SistemaPadresId = "2";
-    public const string LoginPadresUrl = $"{LoginUrl}?sistema={SistemaPadresId}";
-    public const string PadresUrl = $"{BaseUrl}/padres";
-    public const string SubsysLicenciasUrl = $"{HomeUrl}/LicenciasP";
-    public const string SubsysLicencias_LicenciasAlumnosUrl = $"{SubsysLicenciasUrl}/licencias_alumnos.php?id=";
+    private readonly IDatabase _database;
 
-    // TODO: Inject HTTP client via constructor
     public MontessoriBoWebsite(HttpClient client,
-                              CookieContainer cookieContainer)
+                               CookieContainer cookieContainer,
+                               IDatabase database)
     {
         _cookieContainer = cookieContainer ?? throw new ArgumentNullException(nameof(cookieContainer));
         _client = client ?? throw new ArgumentNullException(nameof(client));
+        _database = database ?? throw new ArgumentNullException(nameof(database));
     }
 
     public CookieCollection GetCookies()
     {
-        return _cookieContainer.GetCookies(new Uri(HomeUrl));
+        return _cookieContainer.GetCookies(new Uri(Constants.HomeUrl));
     }
 
-    public void SetCookies(CookieCollection cookies)
+    private void SetCookies(CookieCollection cookies)
     {
         ArgumentNullException.ThrowIfNull(cookies);
 
         foreach (Cookie cookie in cookies)
         {
-            _cookieContainer.Add(new Uri(HomeUrl), cookie);
+            _cookieContainer.Add(new Uri(Constants.HomeUrl), cookie);
         }
     }
 
-    public async Task<HttpResponseMessage> LoginAsync(string email, string password)
+    public async Task<string> LoginAsync(string email, string password)
     {
         // 1. Get the login page to retrieve the CSRF token from content
-        var loginPage = await _client.GetStringAsync(LoginPadresUrl);
+        var loginPage = await _client.GetStringAsync(Constants.LoginPadresUrl);
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(loginPage);
 
@@ -69,31 +59,87 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
         {
                 new KeyValuePair<string, string>("email", email),
                 new KeyValuePair<string, string>("password", password),
-                new KeyValuePair<string, string>("sistema", SistemaPadresId),
+                new KeyValuePair<string, string>("sistema", Constants.SistemaPadresId),
                 new KeyValuePair<string, string>("_token", tokenNode.GetAttributeValue("content", ""))
             });
 
         // 4. Send POST request to login
-        return await _client.PostAsync(LoginUrl, formData);
+        var response = await _client.PostAsync(Constants.LoginUrl, formData);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new UnauthorizedAccessException($"Login failed: {response.ReasonPhrase}");
+        }
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        return responseContent;
     }
 
-    public async Task<HttpResponseMessage> LogoutAsync(string csrfToken)
+    public async Task LogoutAsync(string sessionId)
     {
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            throw new ArgumentException("Session ID cannot be null or empty.", nameof(sessionId));
+        }
+
+        SessionInfo session = await _database.GetSessionByIdAsync(sessionId) ?? throw new UnauthorizedAccessException("Session not found.");
+        if (session.Cookies != null)
+        {
+            SetCookies(session.Cookies);
+        }
+
         var formData = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("_token", csrfToken)
+            new KeyValuePair<string, string>("_token", session.CsrfToken),
         });
 
-        return await _client.PostAsync(LogoutUrl, formData);
+        var response = await _client.PostAsync(Constants.LogoutUrl, formData);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new UnauthorizedAccessException($"Logout failed: {response.ReasonPhrase}");
+        }
     }
 
-    public async Task<HttpResponseMessage> GetPadresPageAsync()
+    // Get any page/content from MontessoriBo
+    public async Task<string> GetStringAsync(string url, bool skipSessionUpsert = false, string sessionId = "")
     {
-        return await _client.GetAsync(PadresUrl);
-    }
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            throw new ArgumentException("URL cannot be null or empty.", nameof(url));
+        }
+        
+        SessionInfo session = new SessionInfo();
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            session = await _database.GetSessionByIdAsync(sessionId);
+            if (session.Cookies != null)
+            {
+                SetCookies(session.Cookies);
+            }
+        }
+        
+        string result;
+        var response = await _client.GetAsync(url);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new UnauthorizedAccessException($"Error retrieving data from {url}: {response.ReasonPhrase}");
+        }
+        result = await response.Content.ReadAsStringAsync();
 
-    public async Task<HttpResponseMessage> GetLicenciasPageAsync()
-    {
-        return await _client.GetAsync(SubsysLicenciasUrl);
+        if (!skipSessionUpsert)
+        {
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(result);
+            var tokenNode = htmlDoc.DocumentNode.SelectSingleNode("//meta[@name='csrf-token']");
+            string csrfToken = tokenNode != null ? tokenNode.GetAttributeValue("content", "") : string.Empty;
+            if (!string.IsNullOrEmpty(csrfToken))
+            {
+                session.CsrfToken = csrfToken;
+            }
+            session.Cookies = GetCookies();
+
+            await _database.UpsertSessionAsync(session);
+        }
+
+        return result;
     }
 }

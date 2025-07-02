@@ -10,6 +10,7 @@ public interface IMontessoriBoWrapperService
 {
     Task<HomeData> GetHomeDataAsync(string sessionId);
     Task<string> GetLicenciasPageAsync(string sessionId);
+    Task<string> GetLicenciasAlumnosAsync(string idAlumno, string sessionId);
 }
 
 public class MontessoriBoWrapperService : IMontessoriBoWrapperService
@@ -31,7 +32,7 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
             user?.FullName ?? "Unknown User",
             new[]
             {
-                new SubSystem("Licencias", "/licencias"),
+                new SubSystem("Licencias", "subsystem"),
                 // new SubSystem("Control Semanal", "/control-semanal"),
                 // new SubSystem("Ausencias", "/ausencias"),
                 // new SubSystem("Notas", "/notas"),
@@ -42,28 +43,72 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         return homeData;
     }
 
+    public async Task<string> GetLicenciasAlumnosAsync(string idAlumno, string sessionId)
+    {
+        string result;
+        string url = $"{Constants.SubsysLicencias_LicenciasAlumnosUrl}{idAlumno}";
+        var response = await _montessoriBoWebsite.GetStringAsync(url, true);
+        result = response;
+
+        return result;
+    }
+
     public async Task<string> GetLicenciasPageAsync(string sessionId)
     {
-        // Lookup session in DB
-        SessionInfo? session = await _database.GetSessionByIdAsync(sessionId) ?? throw new UnauthorizedAccessException("Session not found.");
-
-        // Restore cookies from session
-        if (session.Cookies != null)
-        {
-            _montessoriBoWebsite.SetCookies(session.Cookies);
-        }
         string result;
 
-        HttpResponseMessage response = await _montessoriBoWebsite.GetLicenciasPageAsync();
-        if (response.IsSuccessStatusCode)
+        var responseContent = await _montessoriBoWebsite.GetStringAsync(Constants.SubsysLicenciasUrl, sessionId: sessionId);
+        // Prepend this URL to every src/href (relative only)
+        const string baseUrl = Constants.SubsysLicenciasUrl + "/"; ;
+        const string fixedAjaxUrl = "api/proxy/licencias-alumnos"; // TODO: Better routing
+
+        var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+        htmlDoc.LoadHtml(responseContent);
+
+        // Update <script src="...">
+        foreach (var script in htmlDoc.DocumentNode.SelectNodes("//script[@src]") ?? Enumerable.Empty<HtmlNode>())
         {
-            var responseContent = await response.Content.ReadAsStringAsync();
-            result = responseContent;
+            var src = script.GetAttributeValue("src", "");
+            if (!string.IsNullOrEmpty(src) && !Uri.IsWellFormedUriString(src, UriKind.Absolute))
+            {
+                script.SetAttributeValue("src", baseUrl + src.TrimStart('/'));
+            }
         }
-        else
+
+        // Update <link href="...">
+        foreach (var link in htmlDoc.DocumentNode.SelectNodes("//link[@href]") ?? Enumerable.Empty<HtmlNode>())
         {
-            throw new UnauthorizedAccessException("Error retrieving Licencias page: " + response.ReasonPhrase);
+            var href = link.GetAttributeValue("href", "");
+            if (!string.IsNullOrEmpty(href) && !Uri.IsWellFormedUriString(href, UriKind.Absolute))
+            {
+                link.SetAttributeValue("href", baseUrl + href.TrimStart('/'));
+            }
         }
+
+        // Update <img src="...">
+        foreach (var img in htmlDoc.DocumentNode.SelectNodes("//img[@src]") ?? Enumerable.Empty<HtmlNode>())
+        {
+            var src = img.GetAttributeValue("src", "");
+            if (!string.IsNullOrEmpty(src) && !Uri.IsWellFormedUriString(src, UriKind.Absolute))
+            {
+                img.SetAttributeValue("src", baseUrl + src.TrimStart('/'));
+            }
+        }
+
+        // Modify the GET licencias_alumnos AJAX request URL in inline script, appending sessionId
+        foreach (var script in htmlDoc.DocumentNode.SelectNodes("//script[not(@src)]") ?? Enumerable.Empty<HtmlNode>())
+        {
+            var scriptText = script.InnerHtml;
+            // Replace only the ajax url for licencias_alumnos.php
+            scriptText = System.Text.RegularExpressions.Regex.Replace(
+                scriptText,
+                @"url\s*:\s*['""]licencias_alumnos\.php\?id='\s*\+\s*idalumno",
+                "url: '" + fixedAjaxUrl + "?id='+idalumno+'&sessionId=" + sessionId + "'"
+            );
+            script.InnerHtml = scriptText;
+        }
+
+        result = htmlDoc.DocumentNode.OuterHtml;
 
         return result;
     }

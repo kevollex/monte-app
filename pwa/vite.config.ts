@@ -35,14 +35,17 @@ export default defineConfig(({ mode }) => {
       server: {
         port: parseInt(env.VITE_PORT),
         proxy: {
-                '/api': {
-                    target: process.env.services__apiservice__https__0 ||
-                        process.env.services__apiservice__http__0,
-                    changeOrigin: true,
-                    rewrite: (path) => path.replace(/^\/api/, ''),
-                    secure: false,
-                }
-            }
+          '/api': {
+            target: process.env.services__apiservice__https__0 || process.env.services__apiservice__http__0,
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, ''),
+            secure: false,
+          }
+        },
+        https: {
+          key: require('fs').readFileSync('cert/key.pem'),
+          cert: require('fs').readFileSync('cert/cert.pem'),
+        }
       }
     }
 })
