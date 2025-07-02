@@ -129,10 +129,14 @@ sl-button::part(base):hover {
     }
   }
   
-  async logout() {
-    await this.authService?.logout();
-    localStorage.removeItem('jwt');
-    router.navigate(resolveRouterPath('login'));
+  private async handleLogout() {
+    try {
+      await this.authService?.logout();
+      localStorage.removeItem('jwt');
+      router.navigate(resolveRouterPath('login'));
+    } catch (error) {
+      alert('Error al cerrar sesión');
+    }
   }
 
   render() {
@@ -162,7 +166,7 @@ sl-button::part(base):hover {
               )}
           </div>
           <div style="display:flex; justify-content:center;">
-              <sl-button @click=${this.logout}>Salir</sl-button>
+              <sl-button @click=${this.handleLogout}>Salir</sl-button>
           </div>
       </main>
     `;

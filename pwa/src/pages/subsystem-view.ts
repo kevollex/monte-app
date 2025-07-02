@@ -1,13 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { consume } from '@lit/context';
-import { router, resolveRouterPath } from '../router';
 import '../components/browser-view';
+import '../components/subsystem-view-header';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
 import { montessoriBoWrapperServiceContext } from '../services/montessoribowrapper-service/montessoribowrapper-service-context';
 import { MontessoriBoWrapperService } from '../services/montessoribowrapper-service/montessoribowrapper-service';
-
 
 @customElement('subsystem-view')
 export class SubsystemView extends LitElement {
@@ -75,15 +74,9 @@ export class SubsystemView extends LitElement {
     this.htmlContent = await this.montessoriBoWrapperService.getPage(this.label);
   }
 
-  
-
   render() {
     return html`
-      <div class="header">
-        <sl-button class="back-btn" size="small" @click=${() => router.navigate(resolveRouterPath())}>
-          ← Volver
-        </sl-button>
-        <span>${this.subsystemName}</span>
+      <subsystem-view-header .title=${this.subsystemName}></subsystem-view-header>
       </div>
       <div class="content">
         <browser-view .htmlContent=${this.htmlContent}></browser-view>
