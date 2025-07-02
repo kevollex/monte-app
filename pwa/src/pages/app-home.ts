@@ -24,9 +24,11 @@ export class AppHome extends LitElement {
   @property() username = 'Nombre del padre';
   @property() subSystems: any[] = []; // TODO: define a type for subsystem
 
-  private subSystemsCardsStyles: Record<string, { label: string; color: string; textColor: string }> = {
-    "Licencias": { label: "Licencias", color: "#D9C8F0", textColor: "#6A1B9A" }
-    // TODO: add rest of the subsystems with their styles
+  private subSystemsCardsStyles: Record<string, { name: string; color: string; textColor: string }> = {
+    "control-semanal": { name: "Control Semanal", color: "#A8E6CF", textColor: "#2E7D32" },
+    "cartas-recibidas": { name: "Cartas", color: "#FFCDD2", textColor: "#B71C1C" },
+    "circulares": { name: "Circulares", color: "#FFF9B0", textColor: "#9C6B00" },
+    "licencias": { name: "Licencias", color: "#D9C8F0", textColor: "#6A1B9A" }
   };
 
   static styles = css`
@@ -135,34 +137,34 @@ sl-button::part(base):hover {
 
   render() {
     return html`
-    <main>
-        <div class="container">
-        <div class="header">
-            <img src="/assets/logo.png" class="logo" />
-            <img src="/assets/notification.png" class="icon" />
-        </div>
+      <main>
+          <div class="container">
+          <div class="header">
+              <img src="/assets/logo.png" class="logo" />
+              <img src="/assets/notification.png" class="icon" />
+          </div>
 
-        <div class="username">${this.username}</div>
-        <div class="grid">
-            <!-- TODO: define a type for subsystem -->
-            ${this.subSystems.map(
-              (subsystem: any) => {
-                const cardProps = this.subSystemsCardsStyles[subsystem.name] || {};
-                
-                return html`
-                <card-app
-                  label="${subsystem.name}",
-                  color="${cardProps.color || ''}"
-                  textColor="${cardProps.textColor || ''}"
-                  @click=${() => router.navigate(resolveRouterPath(subsystem.route))}
-                ></card-app>
-              `;}
-            )}
-        </div>
-        <div style="display:flex; justify-content:center;">
-            <sl-button @click=${this.logout}>Salir</sl-button>
-        </div>
-    </main>
+          <div class="username">${this.username}</div>
+          <div class="grid">
+              <!-- TODO: define a type for subsystem -->
+              ${this.subSystems.map(
+                (subsystem: any) => {
+                  const cardProps = this.subSystemsCardsStyles[subsystem.label] || {};
+                  
+                  return html`
+                  <card-app
+                    label="${cardProps.name || ''}",
+                    color="${cardProps.color || ''}"
+                    textColor="${cardProps.textColor || ''}"
+                    @click=${() => router.navigate(resolveRouterPath('subsistema/'+subsystem.label))}
+                  ></card-app>
+                `;}
+              )}
+          </div>
+          <div style="display:flex; justify-content:center;">
+              <sl-button @click=${this.logout}>Salir</sl-button>
+          </div>
+      </main>
     `;
   }
 }

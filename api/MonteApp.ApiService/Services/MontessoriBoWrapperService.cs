@@ -28,14 +28,13 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
     {
         User? user = await _database.GetUserBySessionIdAsync(sessionId);
         HomeData homeData = new HomeData(
-            user?.FullName ?? "Unknown User",
+            user?.FullName ?? "Unknown User 🕵",
             new[]
             {
-                new SubSystem("Licencias", "subsystem"),
-                // new SubSystem("Control Semanal", "/control-semanal"),
-                // new SubSystem("Ausencias", "/ausencias"),
-                // new SubSystem("Notas", "/notas"),
-                // new SubSystem("Comunicados", "/comunicados")
+                new SubSystem("control-semanal"),
+                new SubSystem("cartas-recibidas"),
+                new SubSystem("circulares"),
+                new SubSystem("licencias"),
             }
         );
 
@@ -193,4 +192,4 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
 }
 
 public record HomeData(string Username, SubSystem[] SubSystems );
-public record SubSystem(string Name, string Route);
+public record SubSystem(string Label);

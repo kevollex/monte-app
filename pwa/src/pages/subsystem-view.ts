@@ -12,6 +12,8 @@ import { MontessoriBoWrapperService } from '../services/montessoribowrapper-serv
 @customElement('subsystem-view')
 export class SubsystemView extends LitElement {
   @property({ type: String }) htmlContent = '';
+  @property({ type: String }) label = '';
+  @property({ type: String }) subsystemName = '';
 
   @consume({ context: montessoriBoWrapperServiceContext })
   private montessoriBoWrapperService?: MontessoriBoWrapperService;
@@ -53,13 +55,47 @@ export class SubsystemView extends LitElement {
     }
   `;
 
+  private getSubsystemTitle(label: string): string {
+    // Map of subsystem IDs to names, matching MontessoriBoWrapperService.cs
+    const subsystemNames: Record<string, string> = {
+      "control-semanal": "Control Semanal",
+      "cartas-recibidas": "Cartas Recibidas",
+      "circulares": "Circulares",
+      "licencias": "Licencias",
+    };
+    return subsystemNames[label] ?? "Subsistema Desconocido 🕵";
+  }
+
   async firstUpdated() {
     if (!this.montessoriBoWrapperService) {
       console.error('MontessoriBoWrapperService is not available');
       return;
     }
-    this.htmlContent = await this.montessoriBoWrapperService?.getLicenciasPage();
+    // Set the subsystem name based on the subsystemId
+    this.subsystemName = this.getSubsystemTitle(this.label);
+
+    // Set htmlContent based on subsystemId
+    switch (this.label) {
+      case 'control-semanal':
+      this.htmlContent = await this.montessoriBoWrapperService.getControlSemanalPage();
+      break;
+      case 'cartas-recibidas':
+      this.htmlContent = await this.montessoriBoWrapperService.getCartasRecibidasPage();
+      break;
+      case 'circulares':
+      this.htmlContent = await this.montessoriBoWrapperService.getCircularesPage();
+      break;
+      case 'licencias':
+      this.htmlContent = await this.montessoriBoWrapperService.getLicenciasPage();
+      break;
+      default:
+      this.htmlContent = '<p>Subsistema no encontrado.</p>';
+      break;
+    }
+    // this.htmlContent = await this.montessoriBoWrapperService?.getLicenciasPage();
   }
+
+  
 
   render() {
     return html`
@@ -67,7 +103,7 @@ export class SubsystemView extends LitElement {
         <sl-button class="back-btn" size="small" @click=${() => router.navigate(resolveRouterPath())}>
           ← Volver
         </sl-button>
-        <span>Submódulo</span>
+        <span>${this.subsystemName}</span>
       </div>
       <div class="content">
         <browser-view .htmlContent=${this.htmlContent}></browser-view>

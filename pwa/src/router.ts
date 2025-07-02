@@ -36,17 +36,21 @@ const routes = [
                 return true;
               }
               return false;
-          },
-          redirect: resolveRouterPath('home'),
-        })
-      }
+            },
+            redirect: resolveRouterPath('home'),
+          })
+          }
     ],
     render: () => html`<app-login></app-login>`,
-  },
+    },
   {
-    path: resolveRouterPath('subsystem'),
-    title: 'Submódulo',
-    render: () => html`<subsystem-view></subsystem-view>`,
+    path: resolveRouterPath('subsistema/:label'),
+    // Use the helper function for the title
+    title: (context: { params?: Record<string, string> }) => getSubsystemTitle(context.params?.label ?? ''),
+    render: (context: { params?: Record<string, string> }) => {
+      const label = context.params?.label ?? '';
+      return html`<subsystem-view .label=${label}></subsystem-view>`;
+    },
   },
 ];
 
@@ -70,6 +74,17 @@ const routes = [
         }
       ]
   });
+
+  function getSubsystemTitle(label: string): string {
+    // Map of subsystem IDs to names, matching MontessoriBoWrapperService.cs
+    const subsystemNames: Record<string, string> = {
+      "control-semanal": "Control Semanal",
+      "cartas-recibidas": "Cartas Recibidas",
+      "circulares": "Circulares",
+      "licencias": "Licencias",
+    };
+    return subsystemNames[label] ?? "Subsistema Desconocido 🕵";
+  }
 
   // This function will resolve a path with whatever Base URL was passed to the vite build process.
   // Use of this function throughout the starter is not required, but highly recommended, especially if you plan to use GitHub Pages to deploy.
