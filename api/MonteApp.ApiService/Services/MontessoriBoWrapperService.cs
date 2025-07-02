@@ -8,7 +8,7 @@ namespace MonteApp.ApiService.Services;
 public interface IMontessoriBoWrapperService
 {
     Task<HomeData> GetHomeDataAsync(string sessionId);
-    Task<string> GetLicenciasPageAsync(string sessionId);
+    Task<string> GetLicenciasPageAsync(string sessionId, bool enableScheduleRestrictionBypass = false);
     Task<string> GetLicenciasAlumnosAsync(string idAlumno, string sessionId);
 }
 
@@ -52,7 +52,7 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         return result;
     }
 
-    public async Task<string> GetLicenciasPageAsync(string sessionId)
+    public async Task<string> GetLicenciasPageAsync(string sessionId, bool enableScheduleRestrictionBypass = false)
     {
         string result;
 
@@ -127,6 +127,43 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
             );
             var newScript = originalScript.Replace(scriptText, newScriptText);
             replacements.Add((originalScript, newScript));
+            }
+        }
+
+        if(enableScheduleRestrictionBypass)
+        {
+            var blockToComment = @"(?m)^[ \t]*if\s*\(\s*\(h>='07:00'\s*&&\s*h<'09:00'\)\s*\|\|\s*\(h>='12:00'\s*&&\s*h<'14:00'\)\s*\|\|\s*\(h>='18:00'\s*&&\s*h<'24:00'\)\)\s*\{[\s\S]*?\}[ \t\r\n]*else\s*\{[\s\S]*?\}[ \t\r\n]*";
+            var blockRegex = new System.Text.RegularExpressions.Regex(blockToComment, System.Text.RegularExpressions.RegexOptions.Singleline);
+
+            // Find the first match and comment out each line with //
+            var match = blockRegex.Match(modifiedContent);
+            if (match.Success)
+            {
+                var block = match.Value;
+                // Comment out each line (preserve indentation)
+                var commented = string.Join("\n", block.Split('\n').Select(line => line.Trim().Length > 0 ? "//" + line : line));
+
+                // Now, uncomment just the four lines
+                var linesToUncomment = new[]
+                {
+                "$('#nombreusuario').val(nombreUsuario);",
+                "$('#idalumno').val(idalumno);",
+                "$('#nombrehijo').val(nombrehijo);",
+                "$('#formulario').dialog('open');"
+                };
+
+                foreach (var codeLine in linesToUncomment)
+                {
+                // Remove // only if it is at the start of the line (possibly after whitespace)
+                commented = System.Text.RegularExpressions.Regex.Replace(
+                    commented,
+                    @"^(\s*)//\s*" + System.Text.RegularExpressions.Regex.Escape(codeLine),
+                    "$1" + codeLine,
+                    System.Text.RegularExpressions.RegexOptions.Multiline
+                );
+                }
+
+                replacements.Add((block, commented));
             }
         }
 
