@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MonteApp.ApiService.Models;
 using MonteApp.ApiService.Services;
 
 namespace MonteApp.ApiService.Controllers
@@ -24,6 +25,36 @@ namespace MonteApp.ApiService.Controllers
         {
             var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
             return Ok(await _montessoriBoWrapperService.GetHomeDataAsync(jti));
+        }
+
+        [HttpGet("control-semanal")]
+        [Authorize]
+        public async Task<IActionResult> GetControlSemanalPage()
+        {
+            var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
+            var controlSemanal = await _montessoriBoWrapperService.GetPageAsync(jti, Constants.SubsysControlSemanalUrl);
+         
+            return Content(controlSemanal, "text/html");
+        }
+
+        [HttpGet("cartas-recibidas")]
+        [Authorize]
+        public async Task<IActionResult> GetCartasRecibidasPage()
+        {
+            var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
+            var controlSemanal = await _montessoriBoWrapperService.GetPageAsync(jti, Constants.SubsysCartasRecibidasUrl);
+         
+            return Content(controlSemanal, "text/html");
+        }
+
+        [HttpGet("circulares")]
+        [Authorize]
+        public async Task<IActionResult> GetCircularesPage()
+        {
+            var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
+            var controlSemanal = await _montessoriBoWrapperService.GetPageAsync(jti, Constants.SubsysCircularesUrl);
+         
+            return Content(controlSemanal, "text/html");
         }
 
         [HttpGet("licencias")]

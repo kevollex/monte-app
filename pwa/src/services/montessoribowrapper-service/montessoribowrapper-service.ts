@@ -14,14 +14,14 @@ export class MontessoriBoWrapperService {
         }
     }
 
-    public async getLicenciasPage(): Promise<string> {
+    public async getPage(label: string): Promise<string> {
         try {
             const response = await httpClient.get<string>(
-                `/api/proxy/licencias`
+                `/api/proxy/` + label
             );
             return response.data;
         } catch (error) {
-            console.error('Error getLicenciasPage:', error);
+            console.error('Error getPage:' + label, error);
             throw error; // Re-throw the error for further handling if needed
         }
     }

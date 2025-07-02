@@ -71,28 +71,8 @@ export class SubsystemView extends LitElement {
       console.error('MontessoriBoWrapperService is not available');
       return;
     }
-    // Set the subsystem name based on the subsystemId
     this.subsystemName = this.getSubsystemTitle(this.label);
-
-    // Set htmlContent based on subsystemId
-    switch (this.label) {
-      case 'control-semanal':
-      this.htmlContent = await this.montessoriBoWrapperService.getControlSemanalPage();
-      break;
-      case 'cartas-recibidas':
-      this.htmlContent = await this.montessoriBoWrapperService.getCartasRecibidasPage();
-      break;
-      case 'circulares':
-      this.htmlContent = await this.montessoriBoWrapperService.getCircularesPage();
-      break;
-      case 'licencias':
-      this.htmlContent = await this.montessoriBoWrapperService.getLicenciasPage();
-      break;
-      default:
-      this.htmlContent = '<p>Subsistema no encontrado.</p>';
-      break;
-    }
-    // this.htmlContent = await this.montessoriBoWrapperService?.getLicenciasPage();
+    this.htmlContent = await this.montessoriBoWrapperService.getPage(this.label);
   }
 
   

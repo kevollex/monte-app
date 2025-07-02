@@ -8,6 +8,7 @@ namespace MonteApp.ApiService.Services;
 public interface IMontessoriBoWrapperService
 {
     Task<HomeData> GetHomeDataAsync(string sessionId);
+    Task<string> GetPageAsync(string sessionId, string url);
     Task<string> GetLicenciasPageAsync(string sessionId, bool enableScheduleRestrictionBypass = false);
     Task<string> GetLicenciasAlumnosAsync(string idAlumno, string sessionId);
 }
@@ -188,6 +189,28 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         result = modifiedContent;
 
         return result;
+    }
+
+    // TODO: Use regex to replace some urls in the HTML content
+    //       - src/href attributes in <script>, <link>, <img> tags
+    //       - AJAX URLs in inline scripts maybe?
+    public async Task<string> GetPageAsync(string sessionId, string url)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            throw new ArgumentException("URL cannot be null or empty.", nameof(url));
+        }
+
+        // Ensure the URL is absolute
+        if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
+        {
+            throw new ArgumentException("The provided URL is not valid.", nameof(url));
+        }
+
+        // Fetch the page content
+        var response = await _montessoriBoWebsite.GetStringAsync(url, sessionId: sessionId);
+
+        return response;
     }
 }
 

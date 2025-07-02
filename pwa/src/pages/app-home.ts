@@ -26,7 +26,7 @@ export class AppHome extends LitElement {
 
   private subSystemsCardsStyles: Record<string, { name: string; color: string; textColor: string }> = {
     "control-semanal": { name: "Control Semanal", color: "#A8E6CF", textColor: "#2E7D32" },
-    "cartas-recibidas": { name: "Cartas", color: "#FFCDD2", textColor: "#B71C1C" },
+    "cartas-recibidas": { name: "Cartas Recibidas", color: "#FFCDD2", textColor: "#B71C1C" },
     "circulares": { name: "Circulares", color: "#FFF9B0", textColor: "#9C6B00" },
     "licencias": { name: "Licencias", color: "#D9C8F0", textColor: "#6A1B9A" }
   };
