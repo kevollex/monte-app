@@ -14,4 +14,5 @@ public static class Constants
     public const string PadresUrl = $"{BaseUrl}/padres";
     public const string SubsysLicenciasUrl = $"{HomeUrl}/LicenciasP";
     public const string SubsysLicencias_LicenciasAlumnosUrl = $"{SubsysLicenciasUrl}/licencias_alumnos.php?id=";
+    public const string SubsysLicencias_LicenciaEnviaUrl = $"{SubsysLicenciasUrl}/licencia_envia.php"; // TODO: This is not used, but it might be useful in the future
 }

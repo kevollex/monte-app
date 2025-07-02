@@ -31,12 +31,12 @@ namespace MonteApp.ApiService.Controllers
         public async Task<IActionResult> GetLicenciasPage()
         {
             var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
-            var licencias = await _montessoriBoWrapperService.GetLicenciasPageAsync(jti);
+            var licencias = await _montessoriBoWrapperService.GetLicenciasPageAsync(jti, true); // TODO: Remove the bypass parameter
 
             return Content(licencias, "text/html");
         }
 
-        [HttpPost("licencias-alumnos")]
+        [HttpPost("licencias/licencias-alumnos")]
         public async Task<IActionResult> GetLicenciasAlumnosData(string id, string sessionId)
         {
             // How to authorize this proxy endpoint?
@@ -44,6 +44,19 @@ namespace MonteApp.ApiService.Controllers
             var licenciasAlumnos = await _montessoriBoWrapperService.GetLicenciasAlumnosAsync(id, sessionId);
 
             return Content(licenciasAlumnos, "text/html");
+        }
+
+        [HttpPost("licencias/licencia-envia")]
+        public async Task<IActionResult> PostLicenciaEnvia(
+            [FromForm] string idalumno,
+            [FromForm] string nombrehijo,
+            [FromForm] string motivo,
+            [FromForm] string fechadesde,
+            [FromForm] string fechahasta,
+            string sessionId)
+        {
+            // TODO: Process the data via the MontessoriBoWrapperService
+            return new JsonResult(new { tipoRespuesta = 1 });
         }
 
     }

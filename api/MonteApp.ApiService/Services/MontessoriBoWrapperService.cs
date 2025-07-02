@@ -59,7 +59,8 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         var responseContent = await _montessoriBoWebsite.GetStringAsync(Constants.SubsysLicenciasUrl, sessionId: sessionId);
         // Prepend this URL to every src/href (relative only)
         const string baseUrl = Constants.SubsysLicenciasUrl + "/"; ;
-        const string fixedAjaxUrl = "api/proxy/licencias-alumnos"; // TODO: Better routing
+        const string fixedAjaxUrl = "api/proxy/licencias/licencias-alumnos"; // TODO: Better routing
+        const string fixedEnviaAjaxUrl = "api/proxy/licencias/licencia-envia"; // TODO: Better routing
 
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseContent);
@@ -113,20 +114,32 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         foreach (var script in htmlDoc.DocumentNode.SelectNodes("//script[not(@src)]") ?? Enumerable.Empty<HtmlNode>())
         {
             var scriptText = script.InnerHtml;
-            var regex = new System.Text.RegularExpressions.Regex(
-            @"url\s*:\s*['""]licencias_alumnos\.php\?id='\s*\+\s*idalumno",
-            System.Text.RegularExpressions.RegexOptions.Compiled);
 
-            if (regex.IsMatch(scriptText))
-            {
-            // Find the original script block in the HTML
-            var originalScript = script.OuterHtml;
-            var newScriptText = regex.Replace(
+            // Replace all occurrences of licencias_alumnos.php (with or without query params)
+            var licenciasRegex = new System.Text.RegularExpressions.Regex(
+                @"url\s*:\s*['""]licencias_alumnos\.php(?:\?id=['""]?\s*\+\s*idalumno)?['""]?",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+            var newScriptText = licenciasRegex.Replace(
                 scriptText,
                 "url: '" + fixedAjaxUrl + "?id='+idalumno+'&sessionId=" + sessionId + "'"
             );
-            var newScript = originalScript.Replace(scriptText, newScriptText);
-            replacements.Add((originalScript, newScript));
+
+            // Replace all occurrences of licencia_envia.php
+            var enviaRegex = new System.Text.RegularExpressions.Regex(
+                @"url\s*:\s*['""]licencia_envia\.php['""]",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+            newScriptText = enviaRegex.Replace(
+                newScriptText,
+                "url: '" + fixedEnviaAjaxUrl + "?sessionId=" + sessionId + "'"
+            );
+
+            if (scriptText != newScriptText)
+            {
+                var originalScript = script.OuterHtml;
+                var newScript = originalScript.Replace(scriptText, newScriptText);
+                replacements.Add((originalScript, newScript));
             }
         }
 
