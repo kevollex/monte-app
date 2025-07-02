@@ -22,12 +22,15 @@ Progressive Web App and its companion API
 ### SSL setup
 
 HTTPS mandatory. Trust NET's and generate yours.
+
 ```bash
-dotnet dev-certs https --trust
-mkdir cert
 sudo apt install mkcert OR brew install mkcert   # If you have Homebrew
+cd pwa
+mkdir cert
 mkcert -install
 mkcert -key-file cert/key.pem -cert-file cert/cert.pem localhost
+
+dotnet dev-certs https --trust
 ```
 
 ### api
