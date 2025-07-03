@@ -70,8 +70,7 @@ namespace MonteApp.ApiService.Controllers
         [HttpPost("licencias/licencias-alumnos")]
         public async Task<IActionResult> GetLicenciasAlumnosData(string id, string sessionId)
         {
-            // How to authorize this proxy endpoint?
-            // var jti = User.FindFirst("jti")?.Value ?? throw new UnauthorizedAccessException("jti value on JWT token not found.");
+            // Auth via sessionId
             var licenciasAlumnos = await _montessoriBoWrapperService.GetLicenciasAlumnosAsync(id, sessionId);
 
             return Content(licenciasAlumnos, "text/html");
@@ -86,7 +85,11 @@ namespace MonteApp.ApiService.Controllers
             [FromForm] string fechahasta,
             string sessionId)
         {
-            // TODO: Process the data via the MontessoriBoWrapperService
+            // Auth via sessionId
+            // TODO: Enable process the data via the MontessoriBoWrapperService
+            // var result = await _montessoriBoWrapperService.PostLicenciaAlumnoAsync(idalumno, nombrehijo, motivo, fechadesde, fechahasta, sessionId);
+            // return new JsonResult(result);
+
             return new JsonResult(new { tipoRespuesta = 1 });
         }
 

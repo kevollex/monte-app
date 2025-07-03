@@ -9,7 +9,8 @@ public interface IMontessoriBoWebsite
 {
     Task<string> LoginAsync(string email, string password);
     Task LogoutAsync(string sessionId);
-    Task<string> GetStringAsync(string url, bool skipSessionUpsert = false, string sessionId = "");
+    Task<string> GetStringAsync(string url, string sessionId = "", bool skipSessionUpsert = false);
+    Task<string> PostAsync(string url, string sessionId, FormUrlEncodedContent? formData = null);
     CookieCollection GetCookies();
 }
 
@@ -57,11 +58,11 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
         // 3. Prepare form data
         var formData = new FormUrlEncodedContent(new[]
         {
-                new KeyValuePair<string, string>("email", email),
-                new KeyValuePair<string, string>("password", password),
-                new KeyValuePair<string, string>("sistema", Constants.SistemaPadresId),
-                new KeyValuePair<string, string>("_token", tokenNode.GetAttributeValue("content", ""))
-            });
+            new KeyValuePair<string, string>("email", email),
+            new KeyValuePair<string, string>("password", password),
+            new KeyValuePair<string, string>("sistema", Constants.SistemaPadresId),
+            new KeyValuePair<string, string>("_token", tokenNode.GetAttributeValue("content", ""))
+        });
 
         // 4. Send POST request to login
         var response = await _client.PostAsync(Constants.LoginUrl, formData);
@@ -99,14 +100,14 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
         }
     }
 
-    // Get any page/content from MontessoriBo
-    public async Task<string> GetStringAsync(string url, bool skipSessionUpsert = false, string sessionId = "")
+    // Get any page from MontessoriBo
+    public async Task<string> GetStringAsync(string url, string sessionId = "", bool skipSessionUpsert = false)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
             throw new ArgumentException("URL cannot be null or empty.", nameof(url));
         }
-        
+
         SessionInfo session = new SessionInfo();
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
@@ -116,7 +117,7 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
                 SetCookies(session.Cookies);
             }
         }
-        
+
         string result;
         var response = await _client.GetAsync(url);
         if (!response.IsSuccessStatusCode)
@@ -131,15 +132,46 @@ public class MontessoriBoWebsite : IMontessoriBoWebsite
             htmlDoc.LoadHtml(result);
             var tokenNode = htmlDoc.DocumentNode.SelectSingleNode("//meta[@name='csrf-token']");
             string csrfToken = tokenNode != null ? tokenNode.GetAttributeValue("content", "") : string.Empty;
-            if (!string.IsNullOrEmpty(csrfToken))
+            if (!string.IsNullOrWhiteSpace(csrfToken))
             {
                 session.CsrfToken = csrfToken;
             }
-            session.Cookies = GetCookies();
+            var cookies = GetCookies();
+            if (cookies != null && cookies.Count > 0)
+            {
+                session.Cookies = cookies;
+            }
 
             await _database.UpsertSessionAsync(session);
         }
 
         return result;
+    }
+
+    // Post data to MontessoriBo
+    public async Task<string> PostAsync(string url, string sessionId, FormUrlEncodedContent? formData = null)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            throw new ArgumentException("URL cannot be null or empty.", nameof(url));
+        }
+
+        SessionInfo session = await _database.GetSessionByIdAsync(sessionId) ?? throw new UnauthorizedAccessException("Session not found.");
+        if (session.Cookies != null)
+        {
+            SetCookies(session.Cookies);
+        }
+
+        formData ??= new FormUrlEncodedContent([]);
+
+        var response = await _client.PostAsync(url, formData);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new UnauthorizedAccessException($"POST request to {url} failed: {response.ReasonPhrase}");
+        }
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        return responseContent;
     }
 }

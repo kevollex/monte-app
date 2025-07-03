@@ -11,6 +11,7 @@ public interface IMontessoriBoWrapperService
     Task<string> GetPageAsync(string sessionId, string url);
     Task<string> GetLicenciasPageAsync(string sessionId, bool enableScheduleRestrictionBypass = false);
     Task<string> GetLicenciasAlumnosAsync(string idAlumno, string sessionId);
+    Task<string> PostLicenciaAlumnoAsync(string idAlumno, string nombreHijo, string motivo, string fechaDesde, string fechaHasta, string sessionId);
 }
 
 public class MontessoriBoWrapperService : IMontessoriBoWrapperService
@@ -46,7 +47,7 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
     {
         string result;
         string url = $"{Constants.SubsysLicencias_LicenciasAlumnosUrl}{idAlumno}";
-        var response = await _montessoriBoWebsite.GetStringAsync(url, true, sessionId);
+        var response = await _montessoriBoWebsite.PostAsync(url, sessionId);
         result = response;
 
         return result;
@@ -244,6 +245,22 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         });
 
         return modified;
+    }
+
+    public async Task<string> PostLicenciaAlumnoAsync(string idAlumno, string nombreHijo, string motivo, string fechaDesde, string fechaHasta, string sessionId)
+    {
+        var formData = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("idalumno", idAlumno),
+            new KeyValuePair<string, string>("nombrehijo", nombreHijo),
+            new KeyValuePair<string, string>("motivo", motivo),
+            new KeyValuePair<string, string>("fechadesde", fechaDesde),
+            new KeyValuePair<string, string>("fechahasta", fechaHasta),
+        });
+
+        var result = await _montessoriBoWebsite.PostAsync(Constants.SubsysLicencias_LicenciaEnviaUrl, sessionId, formData);
+
+        return result;
     }
 }
 
