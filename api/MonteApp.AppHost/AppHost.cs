@@ -48,6 +48,10 @@ var creationScript = $$"""
 var db = sql.AddDatabase(databaseName)
             .WithCreationScript(creationScript);
 
+var notificationWorker = builder.AddProject<Projects.MonteApp_NotificationWorker>("notificationworker")
+    .WithReference(db)
+    .WaitFor(db);
+
 var apiService = builder.AddProject<Projects.MonteApp_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")
     .WithReference(db)

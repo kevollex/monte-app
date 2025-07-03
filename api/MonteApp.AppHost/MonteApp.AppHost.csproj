@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../MonteApp.NotificationWorker/MonteApp.NotificationWorker.csproj" />
     <ProjectReference Include="..\MonteApp.ApiService\MonteApp.ApiService.csproj" />
   </ItemGroup>
 
