@@ -210,7 +210,40 @@ public class MontessoriBoWrapperService : IMontessoriBoWrapperService
         // Fetch the page content
         var response = await _montessoriBoWebsite.GetStringAsync(url, sessionId: sessionId);
 
-        return response;
+        // Comment out the whole <aside class="main-sidebar ..."> block after <!-- Main Sidebar Container -->
+        // But do NOT comment lines that are already commented (<!-- ... -->)
+        // TODO: Fix visual output bug see in runtime
+        var asideRegex = new System.Text.RegularExpressions.Regex(
+            @"(<!-- Main Sidebar Container\s*-->\s*)(<aside\s+class=""main-sidebar[\s\S]*?</aside>)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        var modified = asideRegex.Replace(response, match =>
+        {
+            var before = match.Groups[1].Value;
+            var asideBlock = match.Groups[2].Value;
+
+            // Split into lines and comment only lines that are not already commented
+            var commented = string.Join("\n", asideBlock.Split('\n').Select(line =>
+            {
+            var trimmed = line.TrimStart();
+
+            if ((trimmed.StartsWith("<!--") && trimmed.EndsWith("-->")) ||
+                (trimmed.StartsWith("<!-- ") && trimmed.EndsWith(" -->")) ||
+                trimmed.StartsWith("<!--") ||
+                trimmed.EndsWith("-->") ||
+                string.IsNullOrWhiteSpace(trimmed))
+            {
+                return line;
+            }
+            
+            // Otherwise, comment it out
+                return $"<!-- {line} -->";
+            }));
+
+            return before + commented;
+        });
+
+        return modified;
     }
 }
 
