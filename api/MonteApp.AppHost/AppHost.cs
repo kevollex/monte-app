@@ -2,12 +2,15 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache");
 
-var databaseName = "monteappdb"; // TODO: Grab value from config or use default
 var sqlPassword = builder.AddParameter("sqlpassword", true);
 int sqlPort = 1434; // Grab value from config or use default
+
+var montessoriboDatabaseName = "montessoribodb";
+var databaseName = "monteappdb";
+
 var sql = builder.AddSqlServer("sql", sqlPassword, port: sqlPort)
                  .WithLifetime(ContainerLifetime.Persistent)
-                 .WithDataVolume($"{databaseName}-datavolume");
+                 .WithDataVolume($"{databaseName}-datavolume"); // TODO: General name for data volume
 
 var creationScript = $$"""
     -- Create database if it doesn't exist
@@ -45,17 +48,21 @@ var creationScript = $$"""
     GO
     """;
 
-var db = sql.AddDatabase(databaseName)
+var monteAppDb = sql.AddDatabase(databaseName)
             .WithCreationScript(creationScript);
 
-var notificationWorker = builder.AddProject<Projects.MonteApp_NotificationWorker>("notificationworker")
-    .WithReference(db)
-    .WaitFor(db);
+var montessoriBoDb = sql.AddDatabase(montessoriboDatabaseName);
+
+builder.AddProject<Projects.MonteApp_NotificationWorker>("notificationworker")
+    .WithReference(montessoriBoDb)
+    .WaitFor(montessoriBoDb)
+    .WithReference(monteAppDb)
+    .WaitFor(monteAppDb);
 
 var apiService = builder.AddProject<Projects.MonteApp_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")
-    .WithReference(db)
-    .WaitFor(db);
+    .WithReference(monteAppDb)
+    .WaitFor(monteAppDb);
 
 builder.AddNpmApp("pwavite", "../../pwa")
     .WithExternalHttpEndpoints()
