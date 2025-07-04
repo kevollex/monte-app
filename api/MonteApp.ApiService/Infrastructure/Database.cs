@@ -14,9 +14,14 @@ public interface IDatabase
     Task<User> GetUserBySessionIdAsync(string sessionId);
 }
 
-public class Database(SqlConnection connection) : IDatabase
+public class Database: IDatabase
 {
-    private readonly SqlConnection _connection = connection;
+    private readonly SqlConnection _connection;
+
+    public Database(SqlConnection connection)
+    {
+        _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+    }
 
     public async Task<int> FindOrCreateUserAsync(string email, string password, string fullName)
     {
