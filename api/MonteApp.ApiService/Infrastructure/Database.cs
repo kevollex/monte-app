@@ -1,3 +1,4 @@
+using System.Data;
 using System.Net;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
@@ -8,13 +9,18 @@ namespace MonteApp.ApiService.Infrastructure;
 public interface IDatabase
 {
     Task<int> FindOrCreateUserAsync(string email, string password, string fullName);
-    Task <int> UpsertSessionAsync(SessionInfo sessionInfo);
+    Task<int> UpsertSessionAsync(SessionInfo sessionInfo);
     Task<SessionInfo> GetSessionByIdAsync(string id);
     Task RevokeSessionAsync(string id);
     Task<User> GetUserBySessionIdAsync(string sessionId);
+    Task<int> UpsertDeviceAsync(string deviceToken);
+    Task<List<(int QueueId, int NotificationId, int DeviceId)>> GetPendingQueueAsync();
+    Task<(string Title, string Body)> GetNotificationContentAsync(int notificationId);
+    Task UpdateQueueStatusAsync(int queueId, string status, string? errorMessage);
 }
 
-public class Database: IDatabase
+
+public class Database : IDatabase
 {
     private readonly SqlConnection _connection;
 
@@ -117,7 +123,7 @@ public class Database: IDatabase
 
         throw new InvalidOperationException("User not found.");
     }
-    
+
     private static string SerializeCookies(CookieCollection cookies)
     {
         var cookieList = new List<object>();
@@ -197,5 +203,73 @@ public class Database: IDatabase
         {
             throw new InvalidOperationException("Failed to upsert session.");
         }
+    }
+        public async Task<int> UpsertDeviceAsync(string deviceToken)
+    {
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        // SI YA existe el token, devuelve su DeviceId; si no, lo inserta.
+        using var find = new SqlCommand(
+            "SELECT device_id FROM devices WHERE token_fcm = @t", _connection);
+        find.Parameters.AddWithValue("@t", deviceToken);
+        var existing = await find.ExecuteScalarAsync();
+        if (existing != null && existing != DBNull.Value)
+            return Convert.ToInt32(existing);
+
+        using var ins = new SqlCommand(@"
+            INSERT INTO devices (user_id, token_fcm, platform, is_active, registered_at)
+            OUTPUT INSERTED.device_id
+            VALUES (1, @t, NULL, 1, GETDATE());", _connection);
+        ins.Parameters.AddWithValue("@t", deviceToken);
+        var id = await ins.ExecuteScalarAsync();
+        return Convert.ToInt32(id);
+    }
+
+    public async Task<List<(int QueueId, int NotificationId, int DeviceId)>> GetPendingQueueAsync()
+    {
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        var list = new List<(int, int, int)>();
+        using var cmd = new SqlCommand(
+          "SELECT queue_id, notification_id, device_id FROM notification_queue WHERE status = 'pending'", 
+          _connection);
+        using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            list.Add((r.GetInt32(0), r.GetInt32(1), r.GetInt32(2)));
+        return list;
+    }
+
+    public async Task<(string Title, string Body)> GetNotificationContentAsync(int notificationId)
+    {
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        using var cmd = new SqlCommand(
+          "SELECT title, body FROM notifications WHERE notification_id = @nid", _connection);
+        cmd.Parameters.AddWithValue("@nid", notificationId);
+        using var r = await cmd.ExecuteReaderAsync();
+        if (!await r.ReadAsync())
+            throw new Exception($"Notification {notificationId} not found");
+        return (r.GetString(0), r.GetString(1));
+    }
+
+    public async Task UpdateQueueStatusAsync(int queueId, string status, string? errorMessage)
+    {
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        using var cmd = new SqlCommand(@"
+            UPDATE notification_queue
+               SET status = @s
+                 , sent_at = CASE WHEN @s = 'sent' THEN GETDATE() END
+                 , error_message = @e
+             WHERE queue_id = @qid", 
+             _connection);
+        cmd.Parameters.AddWithValue("@s", status);
+        cmd.Parameters.AddWithValue("@e", errorMessage ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@qid", queueId);
+        await cmd.ExecuteNonQueryAsync();
     }
 }

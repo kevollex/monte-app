@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+
+builder.Services.AddCors(opts =>
+{
+    opts.AddPolicy("DevAllowAll", policy =>
+    {
+        policy
+          .AllowAnyOrigin()    // 🟢 Permite peticiones desde cualquier origen (en prod restringir)
+          .AllowAnyMethod()    // 🟢 Permite GET, POST, PUT, DELETE…
+          .AllowAnyHeader();   // 🟢 Permite cualquier header (Authorization, Content-Type…)
+    });
+});
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
@@ -41,6 +53,7 @@ builder.Services.AddControllers();
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMontessoriBoWrapperService, MontessoriBoWrapperService>();
+builder.Services.AddScoped<INotificationsService, NotificationsService>();
 // Infrastructure
 builder.AddSqlServerClient(connectionName: "monteappdb");
 builder.Services.AddScoped<IDatabase, Database>();
@@ -61,6 +74,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+app.UseCors("DevAllowAll");
 
 if (app.Environment.IsDevelopment())
 {

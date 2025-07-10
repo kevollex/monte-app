@@ -58,3 +58,24 @@ const updateName = async (event) => {
 }
 
 workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
+
+importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: "AIzaSyC1ArA65ErYtjKRkSzhjTC53Sqbj8VvdyQ",
+    authDomain: "monteapp-f96cc.firebaseapp.com",
+    projectId: "monteapp-f96cc",
+    storageBucket: "monteapp-f96cc.firebasestorage.app",
+    messagingSenderId: "1036678128041",
+    appId: "1:1036678128041:web:1b524526a5cbfcf38864b8"
+});
+
+const messaging = firebase.messaging();
+messaging.onBackgroundMessage(payload => {
+    const { title, body } = payload.notification;
+    self.registration.showNotification(title, {
+    body,
+    icon: '/assets/logo.png'
+    });
+});
