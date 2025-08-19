@@ -7,6 +7,7 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 
 import { authServiceContext } from '../services/auth-service/auth-service-context';
 import { AuthService } from '../services/auth-service/auth-service';
+import { onFcmMessage, registerFcmToken } from '../firebase';
 
 @customElement('app-login')
 export class AppLogin extends LitElement {
@@ -128,6 +129,7 @@ export class AppLogin extends LitElement {
             console.log('Login successful');
             this.jwtToken = res;
             localStorage.setItem('jwt', this.jwtToken);
+            await this.registerDevice();
             
             router.navigate(resolveRouterPath('home'));
           } else {
@@ -137,7 +139,43 @@ export class AppLogin extends LitElement {
           this.error = 'Error al iniciar sesión.';
       }
     }
+    
+  async registerDevice() {
+  // Tu VAPID Key de Firebase Console → Cloud Messaging → Certificados Web
+      const VAPID_KEY = import.meta.env.VITE_VAPID_KEY;
+  
+  
+      // 1) Registrar SW, pedir permiso y obtener token
+      registerFcmToken(VAPID_KEY)
+        .then(token => {
+          console.log('🔑 Token FCM recibido:', token);
+          // Guarda el token localmente
+          localStorage.setItem('fcmToken', token);
+  
+          // 2) Envía token al backend para suscripción
+          const jwt = localStorage.getItem('jwt') ?? '';
+          return fetch('https://localhost:7448/notifications/subscribe', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            },
+            body: JSON.stringify({ deviceToken: token, deviceType: 'web' })
+          });
+        })
+        .then(res => {
+          if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+          console.log('✅ Dispositivo suscrito correctamente');
+        })
+        .catch(err => console.error('Error al registrar/dispositivo:', err));
+  
+      // 3) Manejar notificaciones en primer plano
+      onFcmMessage(payload => {
+        console.log('📩 manejado en appindex:', payload);
+        // Aquí podrías lanzar un toast o actualizar tu UI
+      });
 
+  }
     render() {
       return html`
         <form

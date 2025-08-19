@@ -1,2 +1,29 @@
-.vscode/settings.json.DS_Store
+# VSCode settings
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Build output
+bin/
+obj/
+dist/
+
+# Node (si tienes frontend con npm/yarn)
+node_modules/
+
+# Entornos
+.env
+.env.local
+.env.*.local
+
+# Firebase service account real (no subas tu JSON de credenciales)
+# — solo ignora el archivo real, no el ejemplo:
 api/MonteApp.NotificationWorker/service-account.json
+
+# Ignora los ejemplos **NO**:
+!api/MonteApp.NotificationWorker/service-account.json.example

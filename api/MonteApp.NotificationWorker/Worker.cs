@@ -47,17 +47,21 @@ public class Worker : BackgroundService
 private async Task ProcessPendingAsync(IDatabase db, IMontessoriBoDatabase montessoriBoDatabase)
 {
     var mensajes = await montessoriBoDatabase.GetPendingMensajesAsync();
-    foreach (var m in mensajes)
-    {
-        // 1) Creamos notificación en MonteApp
-        var nid = await db.InsertNotificationAsync(m.Asignacion, m.Texto);
+        foreach (var m in mensajes)
+        {
+            // 1) Creamos notificación en MonteApp
+            var nid = await db.InsertNotificationAsync(m.Asignacion, m.Texto);
 
-        // 2) La encolamos para el device (usa el deviceId que tengas, p.ej. el tuyo)
-        var deviceId = 4;
-        await db.InsertNotificationQueueAsync(nid, deviceId);
+            // 2) Buscamos dinámicamente el device_id asociado al usuario (m.IdPersonal)
+            var deviceIds = await db.GetDeviceIdsByUserIdAsync(m.IdPersonal);
+            foreach (var deviceId in deviceIds)
+            {
+            // Encolamos para **cada** dispositivo
+            await db.InsertNotificationQueueAsync(nid, deviceId);
+            }
 
-        // 3) Marcamos ese mensaje ya procesado en MontessoriBo
-        await montessoriBoDatabase.MarkMensajeProcessedAsync(m.IdMensaje);
+            // 3) Marcamos ese mensaje ya procesado en MontessoriBo
+            await montessoriBoDatabase.MarkMensajeProcessedAsync(m.IdMensaje);
     }
 
     var pendientes = await db.GetPendingQueueAsync();
@@ -73,10 +77,15 @@ private async Task ProcessPendingAsync(IDatabase db, IMontessoriBoDatabase monte
 
                     // 3) Construye mensaje
                     var message = new Message
-                    {
-                        Token        = token,
-                        Notification = new Notification { Title = title, Body = body }
-                    };
+                {
+                Token = token,
+                Data = new Dictionary<string, string>
+                {
+                { "title", title },
+                { "body",  body  }
+                }
+                };
+
 
                     // 4) Envía a FCM
                     await _fcm.SendAsync(message);

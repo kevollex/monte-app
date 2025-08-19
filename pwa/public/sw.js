@@ -72,10 +72,16 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-messaging.onBackgroundMessage(payload => {
-    const { title, body } = payload.notification;
-    self.registration.showNotification(title, {
+messaging.onBackgroundMessage(async payload => {
+  // 1) ¿Hay alguna ventana visible? Si sí, no mostrar aquí.
+  const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const anyFocused = clientList.some(win => win.visibilityState === 'visible');
+  if (anyFocused) return;
+
+  // 2) Leemos de payload.data
+  const { title, body } = payload.data ?? {};
+  self.registration.showNotification(title ?? 'Notificación', {
     body,
     icon: '/assets/logo.png'
-    });
+  });
 });

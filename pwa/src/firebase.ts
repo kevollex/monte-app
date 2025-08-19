@@ -9,6 +9,7 @@ const firebaseConfig = {
     storageBucket: "monteapp-f96cc.firebasestorage.app",
     messagingSenderId: "1036678128041",
     appId: "1:1036678128041:web:1b524526a5cbfcf38864b8",
+
 };
 
 const app = initializeApp(firebaseConfig);
@@ -35,10 +36,15 @@ export async function registerFcmToken(vapidKey: string): Promise<string> {
  * Maneja notificaciones en primer plano.
  */
 export function onFcmMessage(callback: (payload: any) => void) {
-    onMessage(messaging, payload => {
-    console.log('☝️ Notificación en foreground:', payload);
-    const { title, body } = payload.notification!;
-    new Notification(title ?? 'Notificación', { body, icon: '/assets/logo.png' });
-    callback(payload);
+  onMessage(messaging, payload => {
+    console.log('📩 Notificación en foreground:', payload);
+    // Leemos de `data`, porque enviamos **data-only**
+    const { title, body } = (payload.data ?? {}) as { title: string; body: string };
+    // **Disparamos UNA SOLA** Web Notification
+    new Notification(title ?? 'Notificación', {
+      body,
+      icon: '/assets/logo.png'
     });
+    callback(payload);
+  });
 }

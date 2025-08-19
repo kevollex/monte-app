@@ -63,3 +63,41 @@ aspire publish -o docker-compose-artifacts
 cd docker-compose-artifacts
 docker compose up
 ```
+## Firebase configuration
+
+Firebase is used in MonteApp to support push notifications and real-time functionality in both the backend and frontend.
+
+## Backend (MonteApp.NotificationWorker)
+
+The backend uses Firebase Admin SDK to send push notifications via FCM.
+	•	Store the real service account file as service-account.json in the root of the MonteApp.NotificationWorker project.
+	•	Do not commit this file.
+	•	A sample file is provided as reference: service-account.json.example
+
+## Frontend (pwa)
+
+The PWA uses Firebase Messaging to receive push notifications in the browser.
+
+Environment variables
+
+Add the following variables to your .env file:
+	•	VITE_VAPID_KEY
+
+These values are used in firebase.ts and app-login.ts to register service workers and request FCM tokens.
+
+A sample environment file is provided: pwa/.env.example
+
+## How to get the credentials
+
+Backend – service-account.json
+	1.	Go to Firebase Console
+	2.	Select your project > ⚙️ Settings
+	3.	Go to the Service accounts tab
+	4.	Click Generate new private key
+	5.	Save the file as service-account.json in api/MonteApp.NotificationWorker
+
+Frontend – VAPID_KEY
+	1.	In Firebase Console, go to Project Settings > Cloud Messaging
+	2.	Scroll down to Web configuration
+	3.	Copy the public VAPID key
+	4.	Paste it into your .env file as VITE_VAPID_KEY

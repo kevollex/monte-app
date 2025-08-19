@@ -9,12 +9,12 @@ public interface IDatabase
     Task<int> UpsertDeviceAsync(string deviceToken);
     Task<List<(int QueueId, int NotificationId, int DeviceId)>> GetPendingQueueAsync();
     Task<string> GetDeviceTokenAsync(int deviceId);
-
     Task<(string Title, string Body)> GetNotificationContentAsync(int notificationId);
-
     Task UpdateQueueStatusAsync(int queueId, string status, string? errorMessage);
     Task<int> InsertNotificationAsync(string title, string body);
     Task InsertNotificationQueueAsync(int notificationId, int deviceId);
+    Task<List<int>> GetDeviceIdsByUserIdAsync(int userId);
+    
 }
 
 public class Database : IDatabase
@@ -114,13 +114,15 @@ public class Database : IDatabase
             await _connection.OpenAsync();
 
         using var cmd = new SqlCommand(@"
-        INSERT INTO notifications (created_by_user_id, title, body)
-        OUTPUT INSERTED.notification_id
-        VALUES (1, @t, @b);
-    ", _connection);
-        cmd.Parameters.AddWithValue("@t", title);
-        cmd.Parameters.AddWithValue("@b", body);
-        return Convert.ToInt32(await cmd.ExecuteScalarAsync()!);
+            INSERT INTO notifications (created_by_user_id, type, title, body, created_at)
+            OUTPUT INSERTED.notification_id
+            VALUES (1, @type, @title, @body, GETDATE());", _connection);
+        cmd.Parameters.AddWithValue("@type", "info");         // o el tipo que quieras
+        cmd.Parameters.AddWithValue("@title", title);
+        cmd.Parameters.AddWithValue("@body", body);
+
+        var id = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(id);
     }
 
     public async Task InsertNotificationQueueAsync(int notificationId, int deviceId)
@@ -129,11 +131,31 @@ public class Database : IDatabase
             await _connection.OpenAsync();
 
         using var cmd = new SqlCommand(@"
-        INSERT INTO notification_queue (notification_id, device_id)
-        VALUES (@nid, @did);
-    ", _connection);
+            INSERT INTO notification_queue (notification_id, device_id, status, scheduled_at)
+            VALUES (@nid, @did, 'pending', GETDATE());", _connection);
         cmd.Parameters.AddWithValue("@nid", notificationId);
         cmd.Parameters.AddWithValue("@did", deviceId);
         await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<List<int>> GetDeviceIdsByUserIdAsync(int userId)
+    {
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync();
+
+        var ids = new List<int>();
+        using var cmd = new SqlCommand(
+            @"SELECT device_id
+              FROM devices
+             WHERE user_id   = @uid
+               AND is_active = 1", 
+            _connection);
+        cmd.Parameters.AddWithValue("@uid", userId);
+
+        using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            ids.Add(r.GetInt32(0));
+
+        return ids;
     }
 }
