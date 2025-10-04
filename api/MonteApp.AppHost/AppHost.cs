@@ -3,7 +3,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 var cache = builder.AddRedis("cache");
 
 var sqlPassword = builder.AddParameter("sqlpassword", true);
-int sqlPort = 1434; // Grab value from config or use default
+int sqlPort = 1444; // Grab value from config or use default
 
 var montessoriboDatabaseName = "montessoribodb";
 var databaseName = "monteappdb";
